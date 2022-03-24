@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES31
+import android.view.Surface
 import com.an.gl.util.ShaderUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -15,8 +16,13 @@ import java.nio.ShortBuffer
  * **/
 class SimpleTexturesShader(context: Context) {
 
-    // number of coordinates per vertex in this array
-    private val COORDS_PER_VERTEX = 2
+    companion object {
+        // number of coordinates per vertex in this array
+        private const val COORDS_PER_VERTEX = 2
+        private const val FILE_SIMPLE_VERTEX = "sample_vertex.glsl"
+        private const val FILE_SIMPLE_FRAGMENT = "sample_fragment.glsl"
+    }
+
 
     /**
      * 顶点位置
@@ -86,7 +92,7 @@ class SimpleTexturesShader(context: Context) {
     private var texCoorHandle: Int = 0
     private val vertexStride: Int = COORDS_PER_VERTEX * 4   // 4 bytes per vertex
     private val textureId = 1
-    val surfaceTexture: SurfaceTexture
+    private val surfaceTexture: SurfaceTexture
 
 
     /**
@@ -125,14 +131,8 @@ class SimpleTexturesShader(context: Context) {
         surfaceTexture = SurfaceTexture(textureId)
 
         //初始化着色器
-        val vertexShaderCode = ShaderUtil.getShaderCodeFromAssets(
-            context,
-            "vertex_shader_code.glsl"
-        )
-        val fragmentShaderCode = ShaderUtil.getShaderCodeFromAssets(
-            context,
-            "fragment_shader_code.glsl"
-        )
+        val vertexShaderCode = ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX)
+        val fragmentShaderCode = ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
         val vertexShader: Int = ShaderUtil.loadVertexShader(vertexShaderCode)
         val fragmentShader: Int = ShaderUtil.loadFragmentShader(fragmentShaderCode)
 
@@ -188,5 +188,21 @@ class SimpleTexturesShader(context: Context) {
 
         GLES31.glDisableVertexAttribArray(positionHandle)
         GLES31.glDisableVertexAttribArray(texCoorHandle)
+    }
+
+    fun setDefaultBufferSize(width: Int, height: Int) {
+        surfaceTexture.setDefaultBufferSize(width, height)
+    }
+
+    fun getSurface(): Surface {
+        return Surface(surfaceTexture)
+    }
+
+    fun release() {
+        surfaceTexture.release()
+    }
+
+    fun setOnFrameAvailableListener(listener: SurfaceTexture.OnFrameAvailableListener) {
+        surfaceTexture.setOnFrameAvailableListener(listener)
     }
 }

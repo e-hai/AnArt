@@ -33,11 +33,18 @@ class GLPreviewView @JvmOverloads constructor(
             setRenderer(gLRenderer)
             //设置刷新渲染模式为: 调用requestRender()时刷新
             renderMode = RENDERMODE_WHEN_DIRTY
-            val ratio = request.resolution.width / request.resolution.height
-            layoutParams = LayoutParams(width, width / ratio)
-                .apply { gravity = Gravity.CENTER }
-            this@GLPreviewView.addView(surfaceView)
         }
+        val ratio = request.resolution.width.toFloat() / request.resolution.height.toFloat()
+        val width = width
+        val height = (width.toFloat() * ratio).toInt()
+        Log.d(
+            TAG, " ratio=$ratio " +
+                    "w=${width} " +
+                    "h=${height}"
+        )
+        surfaceView.layoutParams = LayoutParams(width, height)
+            .apply { gravity = Gravity.CENTER }
+        addView(surfaceView)
     }
 
     private val gLRenderer = object : GLSurfaceView.Renderer {
@@ -66,7 +73,7 @@ class GLPreviewView @JvmOverloads constructor(
             // Set the background frame color
             GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
             simpleTextures = SimpleTexturesShader(surfaceView.context)
-            simpleTextures.surfaceTexture.setOnFrameAvailableListener {
+            simpleTextures.setOnFrameAvailableListener {
                 surfaceView.requestRender()
             }
             provideSurfaceRequest()
@@ -93,18 +100,23 @@ class GLPreviewView @JvmOverloads constructor(
 
         private fun provideSurfaceRequest() {
             val surfaceRequest = surfaceRequest ?: return
-            val surfaceTexture = simpleTextures.surfaceTexture
-            surfaceTexture.setDefaultBufferSize(
+            Log.d(
+                TAG, " provideSurfaceRequest " +
+                        "w=${surfaceRequest.resolution.width} " +
+                        "h=${surfaceRequest.resolution.height}"
+            )
+
+            simpleTextures.setDefaultBufferSize(
                 surfaceRequest.resolution.width,
                 surfaceRequest.resolution.height
             )
-            val surface = Surface(surfaceTexture)
+            val surface = simpleTextures.getSurface()
             // Provide the surface and wait for the result to clean up the surface.
             surfaceRequest.provideSurface(
                 surface, ContextCompat.getMainExecutor(surfaceView.context)
             ) {
                 it.surface.release()
-                surfaceTexture.release()
+                simpleTextures.release()
             }
         }
     }
