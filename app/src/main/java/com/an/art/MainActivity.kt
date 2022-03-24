@@ -11,6 +11,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.an.art.databinding.ActivityMainBinding
+import com.an.gl.GLPreviewView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.*
 import java.io.File
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: Executor
     private lateinit var imageCapture: ImageCapture
     private lateinit var detector: FaceDetector
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,10 +71,12 @@ class MainActivity : AppCompatActivity() {
                 cameraExecutor
             )
         }
+
+        BuildConfig.APPLICATION_ID
     }
 
 
-    private fun bindPreview(previewView: PreviewView, cameraProvider: ProcessCameraProvider) {
+    private fun bindPreview(previewView: GLPreviewView, cameraProvider: ProcessCameraProvider) {
         val preview: Preview = Preview.Builder()
             .setTargetAspectRatio(AspectRatio.RATIO_4_3)
             .build()
@@ -83,18 +87,19 @@ class MainActivity : AppCompatActivity() {
             .setTargetAspectRatio(AspectRatio.RATIO_4_3)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
-        imageAnalysis.setAnalyzer(cameraExecutor,
-            { imageProxy ->
-                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-                // insert your code here.
-                val alpha = imageProxy.planes[0].buffer[0]
-                val red = imageProxy.planes[0].buffer[1]
-                val green = imageProxy.planes[0].buffer[2]
-                val blue = imageProxy.planes[0].buffer[3]
+        imageAnalysis.setAnalyzer(
+            cameraExecutor
+        ) { imageProxy ->
+            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+            // insert your code here.
+            val alpha = imageProxy.planes[0].buffer[0]
+            val red = imageProxy.planes[0].buffer[1]
+            val green = imageProxy.planes[0].buffer[2]
+            val blue = imageProxy.planes[0].buffer[3]
 
-                //ml detector
-                detectorByML(imageProxy)
-            })
+            //ml detector
+//            detectorByML(imageProxy)
+        }
 
         val cameraSelector: CameraSelector = CameraSelector.Builder()
             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
@@ -106,13 +111,10 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         preview.setSurfaceProvider(previewView.surfaceProvider)
-        previewView.scaleType = PreviewView.ScaleType.FIT_CENTER
-        val viewPort = previewView.viewPort ?: return
         val useCaseGroup = UseCaseGroup.Builder()
             .addUseCase(preview)
             .addUseCase(imageAnalysis)
             .addUseCase(imageCapture)
-            .setViewPort(viewPort)
             .build()
 
         cameraProvider.bindToLifecycle(
@@ -120,6 +122,7 @@ class MainActivity : AppCompatActivity() {
             cameraSelector,
             useCaseGroup
         )
+        Log.d(TAG, "INIT")
     }
 
     @SuppressLint("UnsafeOptInUsageError")
@@ -165,9 +168,6 @@ class MainActivity : AppCompatActivity() {
                     if (face.trackingId != null) {
                         val id = face.trackingId
                     }
-                }
-                binding.faceTrackingView.post {
-                    binding.faceTrackingView.updateFaces(faces)
                 }
             }
             .addOnFailureListener { e ->
