@@ -2,13 +2,14 @@ package com.an.art
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.graphics.Matrix
+import android.graphics.Rect
+import android.graphics.RectF
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.util.Size
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.an.art.databinding.ActivityMainBinding
 import com.an.gl.GLPreviewView
@@ -78,13 +79,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindPreview(previewView: GLPreviewView, cameraProvider: ProcessCameraProvider) {
         val preview: Preview = Preview.Builder()
-            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .build()
 
         val imageAnalysis = ImageAnalysis.Builder()
             // enable the following line if RGBA output is needed.
             // .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
         imageAnalysis.setAnalyzer(
@@ -98,7 +99,7 @@ class MainActivity : AppCompatActivity() {
             val blue = imageProxy.planes[0].buffer[3]
 
             //ml detector
-//            detectorByML(imageProxy)
+            detectorByML(imageProxy)
         }
 
         val cameraSelector: CameraSelector = CameraSelector.Builder()
@@ -106,7 +107,7 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         imageCapture = ImageCapture.Builder()
-            .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+            .setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .setTargetRotation(previewView.display.rotation)
             .build()
 
@@ -138,9 +139,12 @@ class MainActivity : AppCompatActivity() {
         )
         detector.process(image)
             .addOnSuccessListener { faces ->
+                if (faces.size > 0) {
+                    Log.d(TAG, "face size=${faces.size}")
+                }
+
                 for (face in faces) {
                     val bounds = face.boundingBox
-                    Log.d(TAG, "bounds=$bounds")
                     val rotY = face.headEulerAngleY // Head is rotated to the right rotY degrees
                     val rotZ = face.headEulerAngleZ // Head is tilted sideways rotZ degrees
 
@@ -168,6 +172,9 @@ class MainActivity : AppCompatActivity() {
                     if (face.trackingId != null) {
                         val id = face.trackingId
                     }
+                    getFacePoints(image, bounds).let {
+                        binding.previewView.facePoints = it
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -176,6 +183,39 @@ class MainActivity : AppCompatActivity() {
             .addOnCompleteListener {
                 imageProxy.close()
             }
+    }
+
+    private fun getFacePoints(image: InputImage, bounds: Rect): FloatArray {
+        val imageRectF = RectF().apply {
+            left = 0f
+            right = image.height.toFloat()
+            top = 0f
+            bottom = image.width.toFloat()
+        }
+        val faceRectF = RectF(bounds)
+        //转换成Opengl的标准化坐标
+        return matrixPoints(faceRectF, imageRectF)
+    }
+
+    private fun matrixPoints(srcRectF: RectF, mapRectF: RectF): FloatArray {
+        val dstRectF = RectF()
+        val matrix = Matrix()
+        matrix.setTranslate(-mapRectF.centerX(), -mapRectF.centerY())
+        matrix.mapRect(dstRectF, srcRectF)
+        matrix.setScale(1f / (mapRectF.width() / 2f), 1f / (mapRectF.height() / 2f))
+        matrix.mapRect(dstRectF, dstRectF)
+        matrix.setScale(1f, -1f)
+        matrix.mapRect(dstRectF, dstRectF)
+        Log.d(
+            TAG,
+            "scale $dstRectF}"
+        )
+        return floatArrayOf(
+            dstRectF.left, dstRectF.top,    //左上角
+            dstRectF.left, dstRectF.bottom, //左下角
+            dstRectF.right, dstRectF.bottom,//右下角
+            dstRectF.right, dstRectF.top    //右上角
+        )
     }
 
     fun clickTakePicture() {

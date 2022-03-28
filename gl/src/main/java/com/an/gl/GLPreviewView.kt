@@ -1,6 +1,7 @@
 package com.an.gl
 
 import android.content.Context
+import android.graphics.Rect
 import android.opengl.GLES31
 import android.opengl.GLSurfaceView
 import android.opengl.GLSurfaceView.RENDERMODE_WHEN_DIRTY
@@ -13,7 +14,9 @@ import androidx.annotation.UiThread
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.core.content.ContextCompat
+import com.an.gl.face.FaceDetectionShader
 import com.an.gl.face.SimpleTexturesShader
+import com.google.mlkit.vision.face.Face
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -25,6 +28,9 @@ class GLPreviewView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private lateinit var surfaceView: GLSurfaceView
+
+    var facePoints: FloatArray? = null
+
 
     val surfaceProvider = Preview.SurfaceProvider { request ->
         gLRenderer.setSurfaceRequest(request)
@@ -51,6 +57,8 @@ class GLPreviewView @JvmOverloads constructor(
 
         private var surfaceRequest: SurfaceRequest? = null
         private lateinit var simpleTextures: SimpleTexturesShader
+        private lateinit var faceDetection: FaceDetectionShader
+
 
         fun setSurfaceRequest(request: SurfaceRequest) {
             cancelPreviousRequest()
@@ -72,11 +80,15 @@ class GLPreviewView @JvmOverloads constructor(
             }
             // Set the background frame color
             GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
-            simpleTextures = SimpleTexturesShader(surfaceView.context)
+            simpleTextures = SimpleTexturesShader(context)
             simpleTextures.setOnFrameAvailableListener {
+                Log.d(TAG, "OnFrame: ${Thread.currentThread().name}")
+
                 surfaceView.requestRender()
             }
             provideSurfaceRequest()
+
+            faceDetection = FaceDetectionShader(context)
         }
 
 
@@ -86,7 +98,12 @@ class GLPreviewView @JvmOverloads constructor(
         override fun onDrawFrame(gl: GL10) {
             // Redraw background color
             GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
+            facePoints?.let {
+                Log.d(TAG, "$facePoints")
+                faceDetection.setFacesPoint(it)
+            }
             simpleTextures.draw()
+            faceDetection.draw()
         }
 
         /**
