@@ -1,30 +1,24 @@
-package com.an.gl.camera
+package com.an.gl.video
 
 import android.content.Context
-import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
-import android.opengl.GLES20
 import android.opengl.GLES31
 import android.view.Surface
-import com.an.gl.base.TexturesShader
+import com.an.gl.base.BitmapShader
 import com.an.gl.util.ShaderUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
-
-/**
- * 简单的纹理渲染
- * **/
-class CamareTexturesShader(context: Context) : TexturesShader() {
+class LogoTexturesShader(context: Context) : BitmapShader() {
 
     companion object {
         // number of coordinates per vertex in this array
         private const val COORDS_PER_VERTEX = 3
         private const val COORDS_PER_TEXTURE = 4
-        private const val FILE_SIMPLE_VERTEX = "camare_vertex.glsl"
-        private const val FILE_SIMPLE_FRAGMENT = "camera_fragment.glsl"
+        private const val FILE_SIMPLE_VERTEX = "bitmap_vertex.glsl"
+        private const val FILE_SIMPLE_FRAGMENT = "bitmap_fragment.glsl"
     }
 
 
@@ -116,7 +110,6 @@ class CamareTexturesShader(context: Context) : TexturesShader() {
 
     override fun draw() {
         super.draw()
-        surfaceTexture.updateTexImage()
         // Add program to OpenGL ES environment
         GLES31.glUseProgram(program)
 
@@ -168,5 +161,4 @@ class CamareTexturesShader(context: Context) : TexturesShader() {
         GLES31.glDisableVertexAttribArray(positionHandle)
         GLES31.glDisableVertexAttribArray(texCoorHandle)
     }
-
 }

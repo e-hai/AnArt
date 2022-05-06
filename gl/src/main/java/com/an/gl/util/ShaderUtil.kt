@@ -1,7 +1,11 @@
 package com.an.gl.util
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.SurfaceTexture
+import android.opengl.GLES11Ext
 import android.opengl.GLES31
+import android.opengl.GLUtils
 import android.util.Log
 import java.lang.StringBuilder
 import java.nio.IntBuffer
@@ -66,5 +70,12 @@ object ShaderUtil {
             // creates OpenGL ES program executables
             GLES31.glLinkProgram(program)
         }
+    }
+
+    fun bindBitmapTexture(bitmap: Bitmap, textureId: Int) {
+        //将此纹理绑定到外部纹理上
+        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureId)
+        GLUtils.texImage2D(GLES31.GL_TEXTURE_2D, 0, bitmap, 0)
+        bitmap.recycle()
     }
 }

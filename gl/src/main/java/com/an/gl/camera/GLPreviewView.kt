@@ -122,7 +122,7 @@ class GLPreviewView @JvmOverloads constructor(
                 surfaceRequest.resolution.width,
                 surfaceRequest.resolution.height
             )
-            val surface = camareTextures.getSurface()
+            val surface = camareTextures.surface
             // Provide the surface and wait for the result to clean up the surface.
             surfaceRequest.provideSurface(
                 surface, ContextCompat.getMainExecutor(surfaceView.context)

@@ -24,6 +24,8 @@ import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
 
+import androidx.annotation.Nullable;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -98,7 +100,7 @@ public class MoviePlayer {
      * @param frameCallback Callback object, used to pace output.
      * @throws IOException
      */
-    public MoviePlayer(File sourceFile, Surface outputSurface, FrameCallback frameCallback)
+    public MoviePlayer(File sourceFile, Surface outputSurface, @Nullable FrameCallback frameCallback)
             throws IOException {
         mSourceFile = sourceFile;
         mOutputSurface = outputSurface;
@@ -121,8 +123,9 @@ public class MoviePlayer {
             MediaFormat format = extractor.getTrackFormat(trackIndex);
             mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
             mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+            long duration = format.getLong(MediaFormat.KEY_DURATION);
             if (VERBOSE) {
-                Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight);
+                Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight + " duration=" + duration);
             }
         } finally {
             if (extractor != null) {
@@ -309,7 +312,7 @@ public class MoviePlayer {
                 return;
             }
 
-            // Feed more data to the decoder.
+            // 放入一帧数据
             if (!inputDone) {
                 //获取可用的输入缓存区域的索引
                 int inputBufIndex = decoder.dequeueInputBuffer(TIMEOUT_USEC);
@@ -352,6 +355,7 @@ public class MoviePlayer {
                 }
             }
 
+            //取一帧数据
             if (!outputDone) {
                 //从缓存队列中取出数据放入BufferInfo，根据decoderStatus的状态
                 int decoderStatus = decoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
@@ -408,7 +412,12 @@ public class MoviePlayer {
                         extractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
                         inputDone = false;
                         decoder.flush();    // reset decoder state
-                        frameCallback.loopReset();
+                        if (null != frameCallback) frameCallback.loopReset();
+                    }
+                    try {
+                        Thread.sleep(35L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
             }
