@@ -13,7 +13,7 @@ abstract class TexturesShader {
     fun initTexture() {
         //生成一个纹理
         GLES31.glGenTextures(1, intArrayOf(textureId), 0)
-        //将此纹理绑定到外部纹理上
+        //将此纹理绑定到外部扩展纹理上
         GLES31.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId)
         //设置纹理过滤参数
         GLES31.glTexParameterf(
