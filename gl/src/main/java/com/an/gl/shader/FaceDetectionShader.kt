@@ -1,14 +1,15 @@
-package com.an.gl.camera
+package com.an.gl.shader
 
 import android.content.Context
 import android.opengl.GLES31
+import com.an.gl.base.NormalOesFboShader
 import com.an.gl.util.ShaderUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
-class FaceDetectionShader(context: Context) {
+class FaceDetectionShader(context: Context):NormalOesFboShader() {
 
     companion object {
         // number of coordinates per vertex in this array
@@ -49,15 +50,6 @@ class FaceDetectionShader(context: Context) {
             }
         }
 
-
-    private var drawOrderBuffer: ShortBuffer =
-        ByteBuffer.allocateDirect(drawOrder.size * 2).run {
-            order(ByteOrder.nativeOrder())
-            asShortBuffer().apply {
-                put(drawOrder)
-                position(0)
-            }
-        }
 
 
     private var program: Int
@@ -123,5 +115,10 @@ class FaceDetectionShader(context: Context) {
         vertexBuffer.clear()
         vertexBuffer.put(face)
         vertexBuffer.position(0)
+    }
+
+
+    override fun drawInFBO() {
+        TODO("Not yet implemented")
     }
 }

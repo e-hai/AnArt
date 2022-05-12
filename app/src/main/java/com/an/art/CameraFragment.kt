@@ -14,17 +14,16 @@ import android.view.ViewGroup
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import com.an.art.databinding.ActivityMainBinding
-import com.an.art.databinding.FragmentGlPreviewBinding
-import com.an.gl.camera.GLPreviewView
+import com.an.art.databinding.FragmentCameraBinding
+import com.an.gl.camera.CameraView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.*
 import java.io.File
 import java.util.concurrent.Executor
 
-class GLPreviewFragment : Fragment() {
+class CameraFragment : Fragment() {
 
-    private lateinit var binding: FragmentGlPreviewBinding
+    private lateinit var binding: FragmentCameraBinding
     private lateinit var cameraExecutor: Executor
     private lateinit var imageCapture: ImageCapture
     private lateinit var detector: FaceDetector
@@ -33,7 +32,7 @@ class GLPreviewFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentGlPreviewBinding.inflate(layoutInflater)
+        binding = FragmentCameraBinding.inflate(layoutInflater)
         return binding.root
     }
 
@@ -79,11 +78,10 @@ class GLPreviewFragment : Fragment() {
             )
         }
 
-        BuildConfig.APPLICATION_ID
     }
 
 
-    private fun bindPreview(previewView: GLPreviewView, cameraProvider: ProcessCameraProvider) {
+    private fun bindPreview(previewView: CameraView, cameraProvider: ProcessCameraProvider) {
         val preview: Preview = Preview.Builder()
             .setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .build()
@@ -120,7 +118,7 @@ class GLPreviewFragment : Fragment() {
         preview.setSurfaceProvider(previewView.surfaceProvider)
         val useCaseGroup = UseCaseGroup.Builder()
             .addUseCase(preview)
-            .addUseCase(imageAnalysis)
+//            .addUseCase(imageAnalysis)
             .addUseCase(imageCapture)
             .build()
 
@@ -179,7 +177,6 @@ class GLPreviewFragment : Fragment() {
                         val id = face.trackingId
                     }
                     getFacePoints(image, bounds).let {
-                        binding.previewView.facePoints = it
                     }
                 }
             }

@@ -23,8 +23,9 @@ object ShaderUtil {
             .forEach {
                 code.append(it).appendLine()
             }
-        Log.d(TAG, code.toString())
-        return code.toString()
+        val result = code.toString().trim()
+        Log.d(TAG, result)
+        return result
     }
 
     /**
@@ -72,10 +73,4 @@ object ShaderUtil {
         }
     }
 
-    fun bindBitmapTexture(bitmap: Bitmap, textureId: Int) {
-        //将此纹理绑定到外部纹理上
-        GLES31.glBindTexture(GLES31.GL_TEXTURE_2D, textureId)
-        GLUtils.texImage2D(GLES31.GL_TEXTURE_2D, 0, bitmap, 0)
-        bitmap.recycle()
-    }
 }
