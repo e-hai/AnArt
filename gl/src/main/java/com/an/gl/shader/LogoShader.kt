@@ -4,14 +4,16 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.opengl.GLES31
 import android.opengl.GLUtils
-import android.opengl.Matrix
-import android.util.Log
 import androidx.annotation.DrawableRes
-import com.an.gl.R
-import com.an.gl.base.NormalOesFboShader
+import com.an.gl.base.FboManager
+import com.an.gl.base.OesFboShader
 import com.an.gl.util.ShaderUtil
 
-class LogoShader(val context: Context, @DrawableRes val logoResId: Int) : NormalOesFboShader() {
+class LogoShader(
+    val context: Context,
+    @DrawableRes val logoResId: Int,
+    frameBufferObject: FboManager
+) : OesFboShader(GLES31.GL_TEXTURE_2D, frameBufferObject) {
 
     companion object {
         const val TAG = "LogoShader"
@@ -20,6 +22,7 @@ class LogoShader(val context: Context, @DrawableRes val logoResId: Int) : Normal
     }
 
     private val logoBitmap = BitmapFactory.decodeResource(context.resources, logoResId)
+
     private val logoTexture = floatArrayOf(
         0.0f, 0.0f, //屏幕左上
         0.0f, 1.0f, //屏幕左下
@@ -34,7 +37,7 @@ class LogoShader(val context: Context, @DrawableRes val logoResId: Int) : Normal
         )
     }
 
-    override fun drawInFBO() {
+    override fun onDraw() {
         updateTextureCoord(logoTexture)
         GLES31.glViewport(0, 0, logoBitmap.width, logoBitmap.height)
         GLES31.glEnable(GLES31.GL_BLEND)

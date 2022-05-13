@@ -2,13 +2,17 @@ package com.an.gl.shader
 
 import android.content.Context
 import android.graphics.SurfaceTexture
-import android.util.Log
+import android.opengl.GLES11Ext
 import android.view.Surface
-import com.an.gl.base.ExternalOesFboShader
+import com.an.gl.base.OesFboShader
+import com.an.gl.base.FboManager
 import com.an.gl.util.ShaderUtil
 
 
-class CameraShader(context: Context) : ExternalOesFboShader() {
+class CameraShader(
+    context: Context,
+    frameBufferObject: FboManager
+) : OesFboShader(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, frameBufferObject) {
 
     companion object {
         private const val FILE_SIMPLE_VERTEX = "camera_vertex.glsl"
@@ -32,9 +36,9 @@ class CameraShader(context: Context) : ExternalOesFboShader() {
         surfaceTexture.setDefaultBufferSize(width, height)
     }
 
-    override fun onDrawFrame(textureId: Int): Int {
+    override fun onDrawFrame(desTextureId: Int): Int {
         surfaceTexture.getTransformMatrix(mvpMatrix)
         surfaceTexture.updateTexImage()
-        return super.onDrawFrame(textureId)
+        return super.onDrawFrame(desTextureId)
     }
 }

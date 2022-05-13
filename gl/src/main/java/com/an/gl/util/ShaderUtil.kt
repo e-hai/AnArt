@@ -23,9 +23,9 @@ object ShaderUtil {
             .forEach {
                 code.append(it).appendLine()
             }
-        val result = code.toString().trim()
-        Log.d(TAG, result)
-        return result
+        return code.toString().trim().apply {
+            Log.d(TAG, this)
+        }
     }
 
     /**

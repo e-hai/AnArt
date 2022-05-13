@@ -1,8 +1,6 @@
 package com.an.gl.camera
 
 import android.content.Context
-import android.graphics.SurfaceTexture
-import android.opengl.GLES20
 import android.opengl.GLES31
 import android.opengl.GLSurfaceView
 import android.util.Log
@@ -11,6 +9,7 @@ import androidx.annotation.UiThread
 import androidx.camera.core.SurfaceRequest
 import androidx.core.content.ContextCompat
 import com.an.gl.R
+import com.an.gl.base.FboManager
 import com.an.gl.shader.CameraShader
 import com.an.gl.shader.LogoShader
 import com.an.gl.shader.ScreenShader
@@ -42,10 +41,11 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
         gl?.glGetString(GL10.GL_VERSION).also {
             Log.d(TAG, "Version: $it")
         }
+        val frameBufferObject = FboManager()
         GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         screenShader = ScreenShader(context)
-        logoShader = LogoShader(context, R.drawable.app_name)
-        cameraShader = CameraShader(context)
+        logoShader = LogoShader(context, R.drawable.app_name, frameBufferObject)
+        cameraShader = CameraShader(context, frameBufferObject)
         cameraShader.surfaceTexture.setOnFrameAvailableListener {
             onRequestRender()
         }

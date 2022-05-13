@@ -5,6 +5,7 @@ import android.opengl.GLES31
 import android.opengl.GLSurfaceView
 import android.view.Surface
 import com.an.gl.R
+import com.an.gl.base.FboManager
 import com.an.gl.shader.CameraShader
 import com.an.gl.shader.LogoShader
 import com.an.gl.shader.ScreenShader
@@ -28,8 +29,9 @@ class VideoRenderer(private val context: Context, private val onRequestRender: (
      * **/
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
-        videoShader = CameraShader(context)
-        logoShader = LogoShader(context, R.drawable.app_name)
+        val frameBufferObject = FboManager()
+        videoShader = CameraShader(context, frameBufferObject)
+        logoShader = LogoShader(context, R.drawable.app_name, frameBufferObject)
         screenShader = ScreenShader(context)
         videoShader.surfaceTexture.setOnFrameAvailableListener {
             onRequestRender()

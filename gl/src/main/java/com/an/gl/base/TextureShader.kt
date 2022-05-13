@@ -17,7 +17,9 @@ const val GL_NAME_TEXTURE_COORD = "aTexCoor" //纹理坐标
 const val GL_NAME_TEXTURE = "uTexture"       //纹理
 const val GL_NAME_MVP_MATRIX = "uMVPMatrix"  //总变换矩阵
 
-abstract class Shader {
+abstract class Shader(
+    val textureTarget: Int    //纹理的目标（GL_TEXTURE_EXTERNAL_OES、GL_TEXTURE_2D）
+) {
     /**
      * 默认变换矩阵数据
      * **/
@@ -60,6 +62,7 @@ abstract class Shader {
     lateinit var vertexCoordBuffer: FloatBuffer  //顶点位置数据缓存
     lateinit var textureCoordBuffer: FloatBuffer //纹理位置数据缓存
     lateinit var drawOrderBuffer: ShortBuffer
+    private val textureId = IntArray(1)
 
     var programHandle: Int = 0     //OpenGL ES Program索引
     var vertexHandle: Int = 0      //顶点索引
@@ -73,6 +76,7 @@ abstract class Shader {
 
     open fun initShader(vertexShaderCode: String, fragmentShaderCode: String) {
         initCoord()
+        initTexture()
         initProgram(vertexShaderCode, fragmentShaderCode)
     }
 
@@ -108,6 +112,36 @@ abstract class Shader {
         }
     }
 
+    private fun initTexture() {
+        //生成一个纹理
+        GLES31.glGenTextures(1, textureId, 0)
+        //将此纹理绑定到外部扩展纹理上
+        GLES31.glBindTexture(textureTarget, textureId[0])
+        //设置纹理过滤参数
+        GLES31.glTexParameterf(
+            textureTarget,
+            GLES31.GL_TEXTURE_MIN_FILTER,
+            GLES31.GL_NEAREST.toFloat()
+        )
+        GLES31.glTexParameterf(
+            textureTarget,
+            GLES31.GL_TEXTURE_MAG_FILTER,
+            GLES31.GL_LINEAR.toFloat()
+        )
+        GLES31.glTexParameterf(
+            textureTarget,
+            GLES31.GL_TEXTURE_WRAP_S,
+            GLES31.GL_CLAMP_TO_EDGE.toFloat()
+        )
+        GLES31.glTexParameterf(
+            textureTarget,
+            GLES31.GL_TEXTURE_WRAP_T,
+            GLES31.GL_CLAMP_TO_EDGE.toFloat()
+        )
+        //解绑纹理
+        GLES31.glBindTexture(textureTarget, 0)
+    }
+
     private fun initProgram(vertexShaderCode: String, fragmentShaderCode: String) {
         val vertexShader: Int = ShaderUtil.loadVertexShader(vertexShaderCode)
         val fragmentShader: Int = ShaderUtil.loadFragmentShader(fragmentShaderCode)
@@ -137,6 +171,10 @@ abstract class Shader {
         textureCoordBuffer.position(0)
     }
 
+    fun getTextureId(): Int {
+        return textureId[0]
+    }
+
     /**
      * 释放资源
      * **/
@@ -151,7 +189,7 @@ abstract class Shader {
     }
 
 
-    abstract fun onDrawFrame(textureId: Int): Int
+    abstract fun onDrawFrame(dstTextureId: Int): Int
 
     companion object {
         const val TAG = "Shader"

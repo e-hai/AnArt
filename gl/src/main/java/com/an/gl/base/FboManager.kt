@@ -3,12 +3,12 @@ package com.an.gl.base
 import android.opengl.GLES20
 import android.opengl.GLES31
 
-class FrameBufferObject {
+class FboManager {
 
     private val fboId = IntArray(1)         //FBO ID
     private val fboTextureId = IntArray(1)  //用于FBO操作的纹理 ID
 
-    fun init(width: Int, height: Int) {
+    fun onSizeChange(width: Int, height: Int) {
         release()
 
         //创建FBO
