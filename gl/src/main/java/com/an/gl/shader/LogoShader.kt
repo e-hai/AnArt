@@ -7,7 +7,7 @@ import android.opengl.GLUtils
 import androidx.annotation.DrawableRes
 import com.an.gl.base.FboManager
 import com.an.gl.base.OesFboShader
-import com.an.gl.util.ShaderUtil
+import com.an.gl.util.GlUtil
 
 class LogoShader(
     val context: Context,
@@ -32,8 +32,8 @@ class LogoShader(
 
     init {
         initShader(
-            ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX),
-            ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
+            GlUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX),
+            GlUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
         )
     }
 

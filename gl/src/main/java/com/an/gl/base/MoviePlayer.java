@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.an.gl.video;
+package com.an.gl.base;
 
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
@@ -123,9 +123,10 @@ public class MoviePlayer {
             MediaFormat format = extractor.getTrackFormat(trackIndex);
             mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
             mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+            int frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE);
             long duration = format.getLong(MediaFormat.KEY_DURATION);
             if (VERBOSE) {
-                Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight + " duration=" + duration);
+                Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight + " duration=" + duration + " frameRate=" + frameRate);
             }
         } finally {
             if (extractor != null) {
@@ -305,6 +306,8 @@ public class MoviePlayer {
 
         boolean outputDone = false;
         boolean inputDone = false;
+
+
         while (!outputDone) {
             if (VERBOSE) Log.d(TAG, "loop");
             if (mIsStopRequested) {
@@ -413,11 +416,6 @@ public class MoviePlayer {
                         inputDone = false;
                         decoder.flush();    // reset decoder state
                         if (null != frameCallback) frameCallback.loopReset();
-                    }
-                    try {
-                        Thread.sleep(35L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
                     }
                 }
             }

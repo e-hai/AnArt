@@ -3,11 +3,11 @@ package com.an.gl.video
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
-import android.util.Log
 import android.view.Gravity
 import android.view.Surface
 import android.widget.FrameLayout
-import com.an.gl.camera.CameraRender
+import com.an.gl.base.MoviePlayer
+import com.an.gl.base.SpeedControlCallback
 import com.an.gl.util.FileUtil
 import java.io.File
 
@@ -42,7 +42,7 @@ class VideoView @JvmOverloads constructor(
     }
 
     private fun initVideoPlayer(surface: Surface) {
-        val moviePlayer = MoviePlayer(videoFile, surface, null)
+        val moviePlayer = MoviePlayer(videoFile, surface, SpeedControlCallback())
         val ratio = moviePlayer.videoWidth.toFloat() / moviePlayer.videoHeight.toFloat()
         val width = surfaceView.width
         val height = (width.toFloat() / ratio).toInt()

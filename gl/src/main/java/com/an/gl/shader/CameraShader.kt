@@ -6,7 +6,7 @@ import android.opengl.GLES11Ext
 import android.view.Surface
 import com.an.gl.base.OesFboShader
 import com.an.gl.base.FboManager
-import com.an.gl.util.ShaderUtil
+import com.an.gl.util.GlUtil
 
 
 class CameraShader(
@@ -24,8 +24,8 @@ class CameraShader(
 
     init {
         initShader(
-            ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX),
-            ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
+            GlUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX),
+            GlUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
         )
         surfaceTexture = SurfaceTexture(getTextureId())
         surface = Surface(surfaceTexture)
@@ -37,8 +37,8 @@ class CameraShader(
     }
 
     override fun onDrawFrame(desTextureId: Int): Int {
-        surfaceTexture.getTransformMatrix(mvpMatrix)
         surfaceTexture.updateTexImage()
+        surfaceTexture.getTransformMatrix(mvpMatrix)
         return super.onDrawFrame(desTextureId)
     }
 }

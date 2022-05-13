@@ -1,13 +1,11 @@
 package com.an.gl.base
 
 import android.opengl.GLES31
-import android.util.Log
-import com.an.gl.util.ShaderUtil
+import com.an.gl.util.GlUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
-import java.util.*
 
 /**
  * GL文件中应固定这几个参数名
@@ -143,9 +141,9 @@ abstract class Shader(
     }
 
     private fun initProgram(vertexShaderCode: String, fragmentShaderCode: String) {
-        val vertexShader: Int = ShaderUtil.loadVertexShader(vertexShaderCode)
-        val fragmentShader: Int = ShaderUtil.loadFragmentShader(fragmentShaderCode)
-        programHandle = ShaderUtil.loadProgram(listOf(vertexShader, fragmentShader))
+        val vertexShader: Int = GlUtil.loadVertexShader(vertexShaderCode)
+        val fragmentShader: Int = GlUtil.loadFragmentShader(fragmentShaderCode)
+        programHandle = GlUtil.loadProgram(listOf(vertexShader, fragmentShader))
         vertexHandle = GLES31.glGetAttribLocation(programHandle, GL_NAME_VERTEX_COORD)
         texCoorHandle = GLES31.glGetAttribLocation(programHandle, GL_NAME_TEXTURE_COORD)
         mvpMatrixHandle = GLES31.glGetUniformLocation(programHandle, GL_NAME_MVP_MATRIX)

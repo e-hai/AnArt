@@ -2,9 +2,8 @@ package com.an.gl.shader
 
 import android.content.Context
 import android.opengl.GLES31
-import android.util.Log
 import com.an.gl.base.Shader
-import com.an.gl.util.ShaderUtil
+import com.an.gl.util.GlUtil
 
 /**
  * 把纹理渲染到屏幕的Surface
@@ -18,8 +17,8 @@ class ScreenShader(context: Context) : Shader(GLES31.GL_TEXTURE_2D) {
 
     init {
         initShader(
-            ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX),
-            ShaderUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
+            GlUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_VERTEX),
+            GlUtil.getShaderCodeFromAssets(context, FILE_SIMPLE_FRAGMENT)
         )
     }
 

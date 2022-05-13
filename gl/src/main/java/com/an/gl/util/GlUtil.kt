@@ -1,17 +1,13 @@
 package com.an.gl.util
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.SurfaceTexture
-import android.opengl.GLES11Ext
+import android.opengl.GLES20
 import android.opengl.GLES31
-import android.opengl.GLUtils
 import android.util.Log
-import java.lang.StringBuilder
 import java.nio.IntBuffer
 
 
-object ShaderUtil {
+object GlUtil {
 
     private const val TAG = "Shader"
 
@@ -73,4 +69,16 @@ object ShaderUtil {
         }
     }
 
+
+    /**
+     * Checks to see if a GLES error has been raised.
+     */
+    fun checkGlError(op: String) {
+        val error = GLES31.glGetError()
+        if (error != GLES31.GL_NO_ERROR) {
+            val msg = op + ": glError 0x" + Integer.toHexString(error)
+            Log.e(TAG, msg)
+            throw RuntimeException(msg)
+        }
+    }
 }

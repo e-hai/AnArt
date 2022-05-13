@@ -1,7 +1,7 @@
 package com.an.gl.sample
 
 import android.opengl.GLES31
-import com.an.gl.util.ShaderUtil
+import com.an.gl.util.GlUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -43,11 +43,11 @@ class Triangle(vertexShaderCode: String, fragmentShaderCode: String) {
     private val vertexStride: Int = COORDS_PER_VERTEX * 4   // 4 bytes per vertex
 
     init {
-        val vertexShader: Int = ShaderUtil.loadVertexShader(vertexShaderCode)
-        val fragmentShader: Int = ShaderUtil.loadFragmentShader(fragmentShaderCode)
+        val vertexShader: Int = GlUtil.loadVertexShader(vertexShaderCode)
+        val fragmentShader: Int = GlUtil.loadFragmentShader(fragmentShaderCode)
 
         // create empty OpenGL ES Program
-        mProgram = ShaderUtil.loadProgram(listOf(vertexShader, fragmentShader))
+        mProgram = GlUtil.loadProgram(listOf(vertexShader, fragmentShader))
     }
 
 
