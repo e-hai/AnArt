@@ -7,6 +7,12 @@ import java.io.IOException
 
 object FileUtil {
 
+    fun createFile(context: Context, fileName: String): File {
+        return File(context.filesDir, fileName).apply {
+            createNewFile()
+        }
+    }
+
     fun createFileByAssets(context: Context, fileName: String, assetName: String): File {
         val file = File(context.filesDir, fileName).apply {
             createNewFile()

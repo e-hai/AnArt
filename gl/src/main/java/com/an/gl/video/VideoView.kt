@@ -18,36 +18,37 @@ class VideoView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private lateinit var surfaceView: GLSurfaceView
-    private val videoFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
 
     init {
         initSurfaceView()
     }
 
     private fun initSurfaceView() {
-        val renderer = VideoRenderer(context) {
-            surfaceView.requestRender()
-        }
-        renderer.setSurfaceRequest(object : VideoRenderer.SurfaceRequest {
-            override fun provideSurface(surface: Surface) {
-                post { initVideoPlayer(surface) }
-            }
-        })
-        surfaceView = GLSurfaceView(context).apply {
-            setEGLContextClientVersion(3)
-            setRenderer(renderer)
-            renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
-        }
+        surfaceView = GLSurfaceView(context)
+        surfaceView.setEGLContextClientVersion(3)
         addView(surfaceView)
+
+        val renderer = VideoRenderer(context)
+        renderer.callBack = object : VideoRenderer.CallBack {
+            override fun onVideoSize(videoWidth: Int, videoHeight: Int) {
+                resetSurfaceViewSize(videoWidth, videoHeight)
+            }
+
+            override fun onRequestRender() {
+                surfaceView.requestRender()
+            }
+        }
+        surfaceView.setRenderer(renderer)
+        surfaceView.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
     }
 
-    private fun initVideoPlayer(surface: Surface) {
-        val moviePlayer = MoviePlayer(videoFile, surface, SpeedControlCallback())
-        val ratio = moviePlayer.videoWidth.toFloat() / moviePlayer.videoHeight.toFloat()
-        val width = surfaceView.width
-        val height = (width.toFloat() / ratio).toInt()
-        surfaceView.layoutParams = LayoutParams(width, height).apply { gravity = Gravity.CENTER }
-        MoviePlayer.PlayTask(moviePlayer, null).execute()
+    private fun resetSurfaceViewSize(videoWidth: Int, videoHeight: Int) {
+        post {
+            val ratio = videoWidth.toFloat() / videoHeight.toFloat()
+            val layoutParams = LayoutParams(width, (width.toFloat() / ratio).toInt())
+            layoutParams.gravity = Gravity.CENTER
+            surfaceView.layoutParams = layoutParams
+        }
     }
 
     companion object {

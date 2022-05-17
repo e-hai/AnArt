@@ -44,7 +44,7 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
         val frameBufferObject = FboManager()
         GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         screenShader = ScreenShader(context)
-        logoShader = LogoShader(context, R.drawable.app_name, frameBufferObject)
+        logoShader = LogoShader(context, R.drawable.watermark, frameBufferObject)
         cameraShader = CameraShader(context, frameBufferObject)
         cameraShader.surfaceTexture.setOnFrameAvailableListener {
             onRequestRender()

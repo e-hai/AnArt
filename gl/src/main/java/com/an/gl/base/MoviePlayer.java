@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
  */
 public class MoviePlayer {
     private static final String TAG = "MoviePlayer";
-    private static final boolean VERBOSE = true;
+    private static final boolean VERBOSE = false;
 
     // Declare this here to reduce allocations.
     private MediaCodec.BufferInfo mBufferInfo = new MediaCodec.BufferInfo();
@@ -53,6 +53,8 @@ public class MoviePlayer {
     private boolean mLoop;
     private int mVideoWidth;
     private int mVideoHeight;
+    private int bitRate;
+    private int frameRate;
 
 
     /**
@@ -123,7 +125,12 @@ public class MoviePlayer {
             MediaFormat format = extractor.getTrackFormat(trackIndex);
             mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
             mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
-            int frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE);
+            if (format.containsKey(MediaFormat.KEY_FRAME_RATE)) {
+                frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE);
+            }
+            if (format.containsKey(MediaFormat.KEY_BIT_RATE)) {
+                bitRate = format.getInteger(MediaFormat.KEY_BIT_RATE);
+            }
             long duration = format.getLong(MediaFormat.KEY_DURATION);
             if (VERBOSE) {
                 Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight + " duration=" + duration + " frameRate=" + frameRate);
@@ -133,6 +140,14 @@ public class MoviePlayer {
                 extractor.release();
             }
         }
+    }
+
+    public int getBitRate() {
+        return bitRate;
+    }
+
+    public int getFrameRate() {
+        return frameRate;
     }
 
     /**

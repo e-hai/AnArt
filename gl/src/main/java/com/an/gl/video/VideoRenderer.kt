@@ -1,28 +1,36 @@
 package com.an.gl.video
 
 import android.content.Context
+import android.opengl.EGL14
 import android.opengl.GLES31
 import android.opengl.GLSurfaceView
+import android.os.FileUtils
+import android.view.Gravity
 import android.view.Surface
+import android.view.SurfaceView
+import android.widget.FrameLayout
 import com.an.gl.R
-import com.an.gl.base.FboManager
+import com.an.gl.base.*
 import com.an.gl.shader.CameraShader
 import com.an.gl.shader.LogoShader
 import com.an.gl.shader.ScreenShader
+import com.an.gl.util.FileUtil
+import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class VideoRenderer(private val context: Context, private val onRequestRender: () -> Unit) :
-    GLSurfaceView.Renderer {
+class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
+    private val videoFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
+    private val saveFile: File = FileUtil.createFile(context, "456.mp4")
     private lateinit var videoShader: CameraShader
     private lateinit var logoShader: LogoShader
     private lateinit var screenShader: ScreenShader
-    private var surfaceRequest: SurfaceRequest? = null
 
-    fun setSurfaceRequest(request: SurfaceRequest) {
-        surfaceRequest = request
-    }
+    private lateinit var moviePlayer: MoviePlayer
+
+    var callBack: CallBack? = null
+
 
     /**
      * 初始化配置
@@ -31,14 +39,14 @@ class VideoRenderer(private val context: Context, private val onRequestRender: (
         GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         val frameBufferObject = FboManager()
         videoShader = CameraShader(context, frameBufferObject)
-        logoShader = LogoShader(context, R.drawable.app_name, frameBufferObject)
-        screenShader = ScreenShader(context)
-        videoShader.surfaceTexture.setOnFrameAvailableListener {
-            onRequestRender()
+        val surfaceTexture = videoShader.surfaceTexture
+        surfaceTexture.setOnFrameAvailableListener {
+            callBack?.onRequestRender()
         }
-        provideSurfaceRequest(videoShader.surface)
+        logoShader = LogoShader(context, R.drawable.watermark, frameBufferObject)
+        screenShader = ScreenShader(context)
+        initVideo(videoShader.surface)
     }
-
 
     /**
      * 尺寸更改
@@ -60,12 +68,15 @@ class VideoRenderer(private val context: Context, private val onRequestRender: (
         screenShader.onDrawFrame(textureId)
     }
 
-    private fun provideSurfaceRequest(surface: Surface) {
-        val surfaceRequest = surfaceRequest ?: return
-        surfaceRequest.provideSurface(surface)
+
+    private fun initVideo(surface: Surface) {
+        moviePlayer = MoviePlayer(videoFile, surface, null)
+        callBack?.onVideoSize(moviePlayer.videoWidth, moviePlayer.videoHeight)
+        MoviePlayer.PlayTask(moviePlayer, null).execute()
     }
 
-    interface SurfaceRequest {
-        fun provideSurface(surface: Surface)
+    interface CallBack {
+        fun onVideoSize(videoWidth: Int, videoHeight: Int)
+        fun onRequestRender()
     }
 }
