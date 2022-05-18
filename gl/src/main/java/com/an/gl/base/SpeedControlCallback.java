@@ -136,7 +136,7 @@ public class SpeedControlCallback implements MoviePlayer.FrameCallback {
     }
 
     // runs on decode thread
-    @Override public void postRender() {}
+    @Override public void postRender(boolean over) {}
 
     @Override
     public void loopReset() {

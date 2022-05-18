@@ -31,6 +31,9 @@ class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
     var callBack: CallBack? = null
 
+    init {
+        CameraShader(context, FboManager())
+    }
 
     /**
      * 初始化配置
@@ -70,7 +73,19 @@ class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
 
 
     private fun initVideo(surface: Surface) {
-        moviePlayer = MoviePlayer(videoFile, surface, null)
+        moviePlayer = MoviePlayer(videoFile, surface, object :MoviePlayer.FrameCallback{
+            override fun preRender(presentationTimeUsec: Long) {
+                TODO("Not yet implemented")
+            }
+
+            override fun postRender(over: Boolean) {
+                TODO("Not yet implemented")
+            }
+
+            override fun loopReset() {
+                TODO("Not yet implemented")
+            }
+        })
         callBack?.onVideoSize(moviePlayer.videoWidth, moviePlayer.videoHeight)
         MoviePlayer.PlayTask(moviePlayer, null).execute()
     }

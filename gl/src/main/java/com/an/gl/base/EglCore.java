@@ -81,16 +81,19 @@ public final class EglCore {
             sharedContext = EGL14.EGL_NO_CONTEXT;
         }
 
+        //1.创建EGLDisplay
         mEGLDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
             throw new RuntimeException("unable to get EGL14 display");
         }
+        //2.初始化EGLDisplay
         int[] version = new int[2];
         if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
             mEGLDisplay = null;
             throw new RuntimeException("unable to initialize EGL14");
         }
 
+        // 3，初始化EGLConfig，EGLContext上下文
         // Try to get a GLES3 context, if requested.
         if ((flags & FLAG_TRY_GLES3) != 0) {
             //Log.d(TAG, "Trying GLES 3");

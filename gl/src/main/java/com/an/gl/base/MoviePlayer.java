@@ -39,7 +39,7 @@ import java.nio.ByteBuffer;
  */
 public class MoviePlayer {
     private static final String TAG = "MoviePlayer";
-    private static final boolean VERBOSE = false;
+    private static final boolean VERBOSE = true;
 
     // Declare this here to reduce allocations.
     private MediaCodec.BufferInfo mBufferInfo = new MediaCodec.BufferInfo();
@@ -49,7 +49,7 @@ public class MoviePlayer {
 
     private File mSourceFile;
     private Surface mOutputSurface;
-    FrameCallback mFrameCallback;
+    private FrameCallback mFrameCallback;
     private boolean mLoop;
     private int mVideoWidth;
     private int mVideoHeight;
@@ -84,7 +84,7 @@ public class MoviePlayer {
          * actually been rendered yet.
          * TODO: is this actually useful?
          */
-        void postRender();
+        void postRender(boolean over);
 
         /**
          * Called after the last frame of a looped movie has been rendered.  This allows the
@@ -140,6 +140,10 @@ public class MoviePlayer {
                 extractor.release();
             }
         }
+    }
+
+    public void setOutputSurface(Surface surface) {
+        mOutputSurface = surface;
     }
 
     public int getBitRate() {
@@ -216,6 +220,7 @@ public class MoviePlayer {
             decoder.start();
 
             doExtract(extractor, trackIndex, decoder, mFrameCallback);
+            if (null != mFrameCallback) mFrameCallback.postRender(true);
         } finally {
             // release everything we grabbed
             if (decoder != null) {
@@ -422,7 +427,7 @@ public class MoviePlayer {
                     //释放缓存区域，当设置了Surface则会调用Surface的渲染
                     decoder.releaseOutputBuffer(decoderStatus, doRender);
                     if (doRender && frameCallback != null) {
-                        frameCallback.postRender();
+                        frameCallback.postRender(false);
                     }
 
                     if (doLoop) {

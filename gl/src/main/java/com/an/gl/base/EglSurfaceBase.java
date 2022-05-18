@@ -46,7 +46,7 @@ public class EglSurfaceBase {
     private int mWidth = -1;
     private int mHeight = -1;
 
-    protected EglSurfaceBase(EglCore eglCore) {
+    public EglSurfaceBase(EglCore eglCore) {
         mEglCore = eglCore;
     }
 

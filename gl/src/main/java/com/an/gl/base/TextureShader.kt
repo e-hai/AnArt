@@ -110,7 +110,7 @@ abstract class Shader(
         }
     }
 
-    private fun initTexture() {
+    fun initTexture() {
         //生成一个纹理
         GLES31.glGenTextures(1, textureId, 0)
         //将此纹理绑定到外部扩展纹理上

@@ -5,8 +5,8 @@
     android:layout_height="match_parent"
     tools:context=".VideoFragment">
 
-    <com.an.gl.video.VideoView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+<!--    <com.an.gl.video.VideoView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent" />-->
 
 </FrameLayout>
