@@ -21,11 +21,13 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.util.Log;
+import android.util.Range;
 import android.view.Surface;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * This class wraps up the core components used for surface-input video encoding.
@@ -44,7 +46,7 @@ public class VideoEncoderCore {
     // TODO: these ought to be configurable as well
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
     private static final int FRAME_RATE = 30;               // 30fps
-    private static final int IFRAME_INTERVAL = 5;           // 5 seconds between I-frames
+    private static final int IFRAME_INTERVAL = 2;           // 5 seconds between I-frames
 
     private Surface mInputSurface;
     private MediaMuxer mMuxer;
@@ -60,9 +62,7 @@ public class VideoEncoderCore {
     public VideoEncoderCore(int width, int height, int bitRate, File outputFile)
             throws IOException {
         mBufferInfo = new MediaCodec.BufferInfo();
-
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
-
         // Set some properties.  Failing to specify some of these can cause the MediaCodec
         // configure() call to throw an unhelpful exception.
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,

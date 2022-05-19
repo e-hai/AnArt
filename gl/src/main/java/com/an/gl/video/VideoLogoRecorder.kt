@@ -11,6 +11,7 @@ import com.an.gl.shader.CameraShader
 import com.an.gl.shader.LogoShader
 import com.an.gl.shader.ScreenShader
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 
 class VideoLogoRecorder(
@@ -37,11 +38,13 @@ class VideoLogoRecorder(
         initEGL(movieEncoder.inputSurface)
     }
 
+    var firstPresentationTimeUsec: Long = 0
 
     private fun initVideo() {
         val callback = object : MoviePlayer.FrameCallback {
             override fun preRender(presentationTimeUsec: Long) {
-                egl.setPresentationTime(presentationTimeUsec)
+                egl.setPresentationTime(firstPresentationTimeUsec)
+                firstPresentationTimeUsec += TimeUnit.MILLISECONDS.toNanos((1f / 30f * 1000).toLong()) //30帧每秒
             }
 
             override fun postRender(over: Boolean) {
@@ -59,7 +62,8 @@ class VideoLogoRecorder(
         moviePlayer = MoviePlayer(fromFile, null, callback)
         width = moviePlayer.videoWidth
         height = moviePlayer.videoHeight
-        val bitRate = 3 * width * height
+
+        val bitRate = width * height
         movieEncoder = VideoEncoderCore(width, height, bitRate, outFile)
     }
 

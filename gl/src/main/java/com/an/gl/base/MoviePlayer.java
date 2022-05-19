@@ -53,7 +53,6 @@ public class MoviePlayer {
     private boolean mLoop;
     private int mVideoWidth;
     private int mVideoHeight;
-    private int bitRate;
     private int frameRate;
 
 
@@ -128,9 +127,6 @@ public class MoviePlayer {
             if (format.containsKey(MediaFormat.KEY_FRAME_RATE)) {
                 frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE);
             }
-            if (format.containsKey(MediaFormat.KEY_BIT_RATE)) {
-                bitRate = format.getInteger(MediaFormat.KEY_BIT_RATE);
-            }
             long duration = format.getLong(MediaFormat.KEY_DURATION);
             if (VERBOSE) {
                 Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight + " duration=" + duration + " frameRate=" + frameRate);
@@ -144,14 +140,6 @@ public class MoviePlayer {
 
     public void setOutputSurface(Surface surface) {
         mOutputSurface = surface;
-    }
-
-    public int getBitRate() {
-        return bitRate;
-    }
-
-    public int getFrameRate() {
-        return frameRate;
     }
 
     /**
@@ -220,7 +208,6 @@ public class MoviePlayer {
             decoder.start();
 
             doExtract(extractor, trackIndex, decoder, mFrameCallback);
-            if (null != mFrameCallback) mFrameCallback.postRender(true);
         } finally {
             // release everything we grabbed
             if (decoder != null) {
@@ -408,6 +395,7 @@ public class MoviePlayer {
                             " (size=" + mBufferInfo.size + ")");
                     if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         if (VERBOSE) Log.d(TAG, "output EOS");
+                        if (null != mFrameCallback) mFrameCallback.postRender(true);
                         if (mLoop) {
                             doLoop = true;
                         } else {
