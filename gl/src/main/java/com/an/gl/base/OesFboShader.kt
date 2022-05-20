@@ -8,7 +8,7 @@ import android.opengl.GLES31
 abstract class OesFboShader(
     textureTarget: Int,
     private val fbo: FboManager  //fbo离屏渲染
-) : Shader(textureTarget) {
+) : TextureShader(textureTarget) {
 
 
     override fun onDrawFrame(dstTextureId: Int): Int {

@@ -2,13 +2,13 @@ package com.an.gl.shader
 
 import android.content.Context
 import android.opengl.GLES31
-import com.an.gl.base.Shader
+import com.an.gl.base.TextureShader
 import com.an.gl.util.GlUtil
 
 /**
  * 把纹理渲染到屏幕的Surface
  * **/
-class ScreenShader(context: Context) : Shader(GLES31.GL_TEXTURE_2D) {
+class ScreenShader(context: Context) : TextureShader(GLES31.GL_TEXTURE_2D) {
 
     companion object {
         private const val FILE_SIMPLE_VERTEX = "bitmap_vertex.glsl"
