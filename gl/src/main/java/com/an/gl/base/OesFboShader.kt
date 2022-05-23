@@ -39,6 +39,7 @@ abstract class OesFboShader(
             0,
             vertexCoordBuffer
         )
+
         //启用顶点索引
         GLES31.glEnableVertexAttribArray(vertexHandle)
         //填充数据到纹理坐标索引

@@ -7,13 +7,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
-/**
- * GL文件中应固定这几个参数名
- * **/
-const val GL_NAME_VERTEX_COORD = "aPosition" //顶点坐标
-const val GL_NAME_TEXTURE_COORD = "aTexCoor" //纹理坐标
-const val GL_NAME_TEXTURE = "uTexture"       //纹理
-const val GL_NAME_MVP_MATRIX = "uMVPMatrix"  //总变换矩阵
+
 
 abstract class TextureShader(
     val textureTarget: Int    //纹理的目标（GL_TEXTURE_EXTERNAL_OES、GL_TEXTURE_2D）

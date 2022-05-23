@@ -4,12 +4,15 @@ import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLES31
 import android.util.Log
-import java.nio.IntBuffer
+import java.nio.*
 
 
 object GlUtil {
 
     private const val TAG = "Shader"
+
+
+
 
     fun getShaderCodeFromAssets(context: Context, assetFileName: String): String {
         val code = StringBuilder()
@@ -79,6 +82,34 @@ object GlUtil {
             val msg = op + ": glError 0x" + Integer.toHexString(error)
             Log.e(TAG, msg)
             throw RuntimeException(msg)
+        }
+    }
+
+    fun createFloatBuffer(array: FloatArray): FloatBuffer {
+        return ByteBuffer.allocateDirect(array.size * 4).run {
+            // use the device hardware's native byte order
+            order(ByteOrder.nativeOrder())
+            // create a floating point buffer from the ByteBuffer
+            asFloatBuffer().apply {
+                // add the coordinates to the FloatBuffer
+                put(array)
+                // set the buffer to read the first coordinate
+                position(0)
+            }
+        }
+    }
+
+    fun createShortBuffer(array: ShortArray): ShortBuffer {
+        return ByteBuffer.allocateDirect(array.size * 4).run {
+            // use the device hardware's native byte order
+            order(ByteOrder.nativeOrder())
+            // create a floating point buffer from the ByteBuffer
+            asShortBuffer().apply {
+                // add the coordinates to the FloatBuffer
+                put(array)
+                // set the buffer to read the first coordinate
+                position(0)
+            }
         }
     }
 }
