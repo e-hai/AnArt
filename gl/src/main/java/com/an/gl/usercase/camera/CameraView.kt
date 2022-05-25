@@ -1,4 +1,4 @@
-package com.an.gl.camera
+package com.an.gl.usercase.camera
 
 import android.content.Context
 import android.opengl.GLSurfaceView
@@ -9,7 +9,7 @@ import android.view.Gravity
 import android.widget.FrameLayout
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
-import com.an.gl.camera.CameraRender.Companion.TAG
+import com.an.gl.usercase.camera.CameraRender.Companion.TAG
 
 
 class CameraView @JvmOverloads constructor(

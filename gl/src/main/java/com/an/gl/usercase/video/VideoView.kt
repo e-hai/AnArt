@@ -1,15 +1,10 @@
-package com.an.gl.video
+package com.an.gl.usercase.video
 
 import android.content.Context
 import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.view.Gravity
-import android.view.Surface
 import android.widget.FrameLayout
-import com.an.gl.base.MoviePlayer
-import com.an.gl.base.SpeedControlCallback
-import com.an.gl.util.FileUtil
-import java.io.File
 
 class VideoView @JvmOverloads constructor(
     context: Context,

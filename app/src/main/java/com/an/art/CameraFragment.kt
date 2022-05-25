@@ -15,7 +15,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.an.art.databinding.FragmentCameraBinding
-import com.an.gl.camera.CameraView
+import com.an.gl.usercase.camera.CameraView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.*
 import java.io.File

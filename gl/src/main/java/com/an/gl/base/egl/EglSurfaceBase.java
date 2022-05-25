@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.an.gl.base;
+package com.an.gl.base.egl;
 
 import android.graphics.Bitmap;
 import android.opengl.EGL14;

@@ -1,4 +1,4 @@
-package com.an.gl.base
+package com.an.gl.base.texture
 
 interface Texture {
 
@@ -7,4 +7,6 @@ interface Texture {
     fun bindTexture()
 
     fun unbindTexture()
+
+    fun release()
 }

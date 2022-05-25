@@ -12,8 +12,6 @@ object GlUtil {
     private const val TAG = "Shader"
 
 
-
-
     fun getShaderCodeFromAssets(context: Context, assetFileName: String): String {
         val code = StringBuilder()
         context.assets.open(assetFileName)
@@ -36,7 +34,6 @@ object GlUtil {
             // add the source code to the shader and compile it
             GLES31.glShaderSource(shader, shaderCode)
             GLES31.glCompileShader(shader)
-
             //检查shader编译状态
             val compileStatus = IntBuffer.allocate(1)
             GLES31.glGetShaderiv(shader, GLES31.GL_COMPILE_STATUS, compileStatus)
@@ -44,15 +41,18 @@ object GlUtil {
                 Log.d(TAG, "compile success")
             } else {
                 Log.d(TAG, "compile fail: ${GLES31.glGetShaderInfoLog(shader)}")
+                GLES31.glDeleteShader(shader)
             }
         }
     }
 
     fun loadVertexShader(shaderCode: String): Int {
+        Log.d(TAG, shaderCode)
         return loadShader(GLES31.GL_VERTEX_SHADER, shaderCode)
     }
 
     fun loadFragmentShader(shaderCode: String): Int {
+        Log.d(TAG, shaderCode)
         return loadShader(GLES31.GL_FRAGMENT_SHADER, shaderCode)
     }
 
@@ -61,14 +61,24 @@ object GlUtil {
      * **/
     fun loadProgram(shaders: List<Int>): Int {
         return GLES31.glCreateProgram().also { program ->
-
+            if (program == GLES31.GL_FALSE) {
+                Log.d(TAG, "create program fail")
+                return@also
+            }
             // add the shader to program
             shaders.forEach {
                 GLES31.glAttachShader(program, it)
+                checkGlError("glAttachShader")
             }
 
             // creates OpenGL ES program executables
             GLES31.glLinkProgram(program)
+            val linkStatus = IntArray(1)
+            GLES31.glGetProgramiv(program, GLES31.GL_LINK_STATUS, linkStatus, 0)
+            if (linkStatus[0] == GLES31.GL_FALSE) {
+                Log.d(TAG, "link program fail：${GLES31.glGetProgramInfoLog(program)}")
+                GLES31.glDeleteProgram(program)
+            }
         }
     }
 

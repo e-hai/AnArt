@@ -1,4 +1,4 @@
-package com.an.gl.base
+package com.an.gl.base.draw
 
 
 /**
@@ -27,9 +27,14 @@ interface Draw {
     fun initShadeProgram()
 
     /**
-     * 显示区域大小更改回调
+     * 最大的显示区域更改回调
      * **/
     fun onSizeChange(width: Int, height: Int)
+
+    /**
+     * 更新视图区域
+     * */
+    fun updateViewport()
 
     /**
      * 绘制回调

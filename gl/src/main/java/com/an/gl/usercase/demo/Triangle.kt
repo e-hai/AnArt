@@ -1,4 +1,4 @@
-package com.an.gl.sample
+package com.an.gl.usercase.demo
 
 import android.opengl.GLES31
 import com.an.gl.util.GlUtil

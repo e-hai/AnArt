@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.an.art.databinding.FragmentVideoBinding
 import com.an.gl.util.FileUtil
-import com.an.gl.video.VideoLogoRecorder
+import com.an.gl.usercase.video.VideoAddWatermarkManager
 import java.io.File
 
 class VideoFragment : Fragment() {
@@ -28,7 +28,7 @@ class VideoFragment : Fragment() {
             val context = context ?: return@Thread
             val fromFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
             val outFile: File = FileUtil.createFile(context, "456.mp4")
-            VideoLogoRecorder(context, fromFile, outFile).start()
+            VideoAddWatermarkManager(context, fromFile, outFile).start()
         }.start()
     }
 }

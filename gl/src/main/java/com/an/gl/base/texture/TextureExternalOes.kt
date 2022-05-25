@@ -1,4 +1,4 @@
-package com.an.gl.base
+package com.an.gl.base.texture
 
 import android.opengl.GLES11Ext
 import android.opengl.GLES31
@@ -11,7 +11,7 @@ class TextureExternalOes : Texture {
     init {
         //生成一个纹理
         GLES31.glGenTextures(textureIds.size, textureIds, 0)
-        bindTexture()
+        GLES31.glBindTexture(textureTarget, textureIds[0])
         //设置纹理过滤参数
         GLES31.glTexParameterf(
             textureTarget,
@@ -33,7 +33,7 @@ class TextureExternalOes : Texture {
             GLES31.GL_TEXTURE_WRAP_T,
             GLES31.GL_CLAMP_TO_EDGE.toFloat()
         )
-        unbindTexture()
+        GLES31.glBindTexture(textureTarget, 0)
     }
 
     override fun getTextureId(): Int {
@@ -53,5 +53,9 @@ class TextureExternalOes : Texture {
      * **/
     override fun unbindTexture() {
         GLES31.glBindTexture(textureTarget, 0)
+    }
+
+    override fun release() {
+        GLES31.glDeleteTextures(textureIds.size,textureIds,0)
     }
 }

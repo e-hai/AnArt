@@ -1,9 +1,8 @@
-package com.an.gl.base
+package com.an.gl.base.draw
 
 import android.opengl.GLES31
+import com.an.gl.base.texture.Texture
 import com.an.gl.util.GlUtil
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
@@ -22,12 +21,31 @@ const val GL_NAME_TEXTURE_COORD = "aTexCoor" //纹理坐标
 const val GL_NAME_TEXTURE = "uTexture"       //纹理
 const val GL_NAME_MVP_MATRIX = "uMVPMatrix"  //总变换矩阵
 
-class SimpleDraw(val texture: Texture) : Draw {
+open class SimpleDraw(val texture: Texture) : Draw {
 
-    private lateinit var mvpMatrixBuffer: FloatBuffer    //总变换矩阵
-    private lateinit var vertexCoordBuffer: FloatBuffer  //顶点坐标
-    private lateinit var textureCoordBuffer: FloatBuffer //纹理坐标
-    private lateinit var drawOrderBuffer: ShortBuffer    //绘制路径
+    val dataMvpMatrix = floatArrayOf(
+        1f, 0f, 0f, 0f, //屏幕左上
+        0f, 1f, 0f, 0f, //屏幕左下
+        0f, 0f, 1f, 0f, //屏幕右下
+        0f, 0f, 0f, 1f, //屏幕右上
+    )
+    private val dataVertexCoord = floatArrayOf(
+        -1.0f, 1.0f,  //屏幕左上
+        -1.0f, -1.0f, //屏幕左下
+        1.0f, -1.0f,  //屏幕右下
+        1.0f, 1.0f    //屏幕右上
+    )
+    private val dataTextureCoord = floatArrayOf(
+        0.0f, 1.0f, //屏幕左上
+        0.0f, 0.0f, //屏幕左下
+        1.0f, 0.0f, //屏幕右下
+        1.0f, 1.0f  //屏幕右上
+    )
+    val dataDrawOrder = shortArrayOf(0, 1, 2, 0, 2, 3)
+
+    lateinit var vertexCoordBuffer: FloatBuffer  //顶点坐标
+    lateinit var textureCoordBuffer: FloatBuffer //纹理坐标
+    lateinit var drawOrderBuffer: ShortBuffer    //绘制路径
 
     var programHandle: Int = 0       //OpenGL ES Program索引
     var vertexCoorHandle: Int = 0    //顶点索引
@@ -38,36 +56,22 @@ class SimpleDraw(val texture: Texture) : Draw {
     var outWidth: Int = 0
     var outHeight: Int = 0
 
-    override fun initCoordinateData() {
-        val defaultMvpMatrix = floatArrayOf(
-            1f, 0f, 0f, 0f, //屏幕左上
-            0f, 1f, 0f, 0f, //屏幕左下
-            0f, 0f, 1f, 0f, //屏幕右下
-            0f, 0f, 0f, 1f, //屏幕右上
-        )
-        val defaultVertexCoord = floatArrayOf(
-            -1.0f, 1.0f,  //屏幕左上
-            -1.0f, -1.0f, //屏幕左下
-            1.0f, -1.0f,  //屏幕右下
-            1.0f, 1.0f    //屏幕右上
-        )
-        val defaultTextureCoord = floatArrayOf(
-            0.0f, 1.0f, //屏幕左上
-            0.0f, 0.0f, //屏幕左下
-            1.0f, 0.0f, //屏幕右下
-            1.0f, 1.0f  //屏幕右上
-        )
-        val defaultDrawOrder = shortArrayOf(0, 1, 2, 0, 2, 3)
-        mvpMatrixBuffer = GlUtil.createFloatBuffer(defaultMvpMatrix)
-        vertexCoordBuffer = GlUtil.createFloatBuffer(defaultVertexCoord)
-        textureCoordBuffer = GlUtil.createFloatBuffer(defaultTextureCoord)
-        drawOrderBuffer = GlUtil.createShortBuffer(defaultDrawOrder)
+    init {
+        initCoordinateData()
+        initShadeProgram()
+    }
+
+
+    final override fun initCoordinateData() {
+        vertexCoordBuffer = GlUtil.createFloatBuffer(dataVertexCoord)
+        textureCoordBuffer = GlUtil.createFloatBuffer(dataTextureCoord)
+        drawOrderBuffer = GlUtil.createShortBuffer(dataDrawOrder)
     }
 
     override fun getVertexShadeCode(): String {
         return """
             attribute vec4 $GL_NAME_VERTEX_COORD;
-            attribute vec2 $GL_NAME_TEXTURE_COORD;
+            attribute vec4 $GL_NAME_TEXTURE_COORD;
             uniform mat4 $GL_NAME_MVP_MATRIX;
             varying vec2 vTexCoordinate;
             
@@ -92,7 +96,7 @@ class SimpleDraw(val texture: Texture) : Draw {
         """.trimIndent()
     }
 
-    override fun initShadeProgram() {
+    final override fun initShadeProgram() {
         val vertexShader: Int = GlUtil.loadVertexShader(getVertexShadeCode())
         val fragmentShader: Int = GlUtil.loadFragmentShader(getFragmentShadeCode())
         programHandle = GlUtil.loadProgram(listOf(vertexShader, fragmentShader))
@@ -104,6 +108,7 @@ class SimpleDraw(val texture: Texture) : Draw {
 
     override fun release() {
         GLES31.glDeleteProgram(programHandle)
+        texture.release()
     }
 
     override fun onSizeChange(width: Int, height: Int) {
@@ -113,12 +118,15 @@ class SimpleDraw(val texture: Texture) : Draw {
 
     override fun onDraw() {
         //设置视图区域
-        GLES31.glViewport(0, 0, outWidth, outHeight)
+        updateViewport()
 
         //要启用的着色器程序
         GLES31.glUseProgram(programHandle)
 
-        //给顶点坐标属性添加数据
+        //将矩阵数据传进渲染管线
+        GLES31.glUniformMatrix4fv(mvpMatrixHandle, 1, false, dataMvpMatrix, 0)
+
+        //将顶点坐标数据传进渲染管线
         GLES31.glVertexAttribPointer(
             vertexCoorHandle,
             GL_COORDINATE_SYSTEM_XY,
@@ -130,7 +138,7 @@ class SimpleDraw(val texture: Texture) : Draw {
         //启用顶点坐标属性，这里会影响后续的顶点操作（纹理坐标映射、顶点绘制）
         GLES31.glEnableVertexAttribArray(vertexCoorHandle)
 
-        //给纹理坐标属性添加数据
+        //将纹理坐标数据传进渲染管线
         GLES31.glVertexAttribPointer(
             textureCoorHandle,
             GL_COORDINATE_SYSTEM_XY,
@@ -146,12 +154,12 @@ class SimpleDraw(val texture: Texture) : Draw {
         texture.bindTexture()
 
         //绑定的纹理，关联到着色器的纹理属性上
-        GLES31.glUniform1i(textureHandle, 0)
+        GLES31.glUniform1i(textureHandle, GLES31.GL_TEXTURE0)
 
         //按照绘制数据来绘制顶点
         GLES31.glDrawElements(
             GLES31.GL_TRIANGLES,          //图元的形状（点、线、三角形）
-            drawOrderBuffer.array().size, //顶点数量
+            dataDrawOrder.size,           //顶点数量
             GLES31.GL_UNSIGNED_SHORT,     //元素类型
             drawOrderBuffer               //元素数据
         )
@@ -164,5 +172,9 @@ class SimpleDraw(val texture: Texture) : Draw {
 
         //关闭使用顶点坐标属性
         GLES31.glDisableVertexAttribArray(vertexCoorHandle)
+    }
+
+    override fun updateViewport() {
+        GLES31.glViewport(0, 0, outWidth, outHeight)
     }
 }
