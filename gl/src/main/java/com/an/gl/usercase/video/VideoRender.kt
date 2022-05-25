@@ -6,17 +6,18 @@ import android.opengl.GLSurfaceView
 import android.view.Surface
 import com.an.gl.R
 import com.an.gl.base.*
-import com.an.gl.usercase.LogoDraw
+import com.an.gl.usercase.WatermarkConfig
+import com.an.gl.usercase.WatermarkDraw
 import com.an.gl.util.FileUtil
 import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
+class VideoRender(private val context: Context) : GLSurfaceView.Renderer {
 
     private val videoFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
     private lateinit var mediaEglManager: MediaEglManager
-    private lateinit var logoDraw: LogoDraw
+    private lateinit var watermarkDraw: WatermarkDraw
     private lateinit var moviePlayer: MoviePlayer
 
     var callBack: CallBack? = null
@@ -33,7 +34,7 @@ class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
             }
             initVideo(surface)
         }
-        logoDraw = LogoDraw(context, R.drawable.watermark)
+        watermarkDraw = WatermarkDraw(context, WatermarkConfig(R.drawable.watermark))
     }
 
     /**
@@ -41,7 +42,7 @@ class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
      * **/
     override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
         mediaEglManager.onSizeChange(width, height)
-        logoDraw.onSizeChange(width, height)
+        watermarkDraw.onSizeChange(width, height)
     }
 
     /**
@@ -50,7 +51,7 @@ class VideoRenderer(private val context: Context) : GLSurfaceView.Renderer {
     override fun onDrawFrame(gl: GL10) {
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
-            logoDraw.onDraw()
+            watermarkDraw.onDraw()
         }
     }
 

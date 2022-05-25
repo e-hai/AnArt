@@ -9,9 +9,9 @@ import com.an.gl.base.draw.GL_COORDINATE_SYSTEM_XY
 import com.an.gl.base.draw.SimpleDraw
 import com.an.gl.base.texture.Texture2dOes
 
-class LogoDraw(
+class WatermarkDraw(
     context: Context,
-    @DrawableRes logoResId: Int,
+    config: WatermarkConfig,
     texture: Texture2dOes = Texture2dOes()
 ) : SimpleDraw(texture) {
 
@@ -19,7 +19,7 @@ class LogoDraw(
         const val TAG = "LogoShader"
     }
 
-    private val logoBitmap = BitmapFactory.decodeResource(context.resources, logoResId)
+    private val logoBitmap = BitmapFactory.decodeResource(context.resources, config.watermarkResId)
 
     init {
         //正确处理纹理坐标在世界坐标的显示效果
@@ -106,4 +106,17 @@ class LogoDraw(
         super.release()
         logoBitmap.recycle()
     }
+}
+
+data class WatermarkConfig(
+    @DrawableRes val watermarkResId: Int,
+    val locationMode: LocationMode = LocationMode.LEFT_TOP
+)
+
+enum class LocationMode {
+    LEFT_TOP,    //左上角
+    LEFT_BOTTOM, //左下角
+    RIGHT_TOP,   //右上角
+    RIGHT_BOTTOM,//右下角
+    ALL          //四个角定时轮播
 }

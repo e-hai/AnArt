@@ -23,8 +23,8 @@ class VideoView @JvmOverloads constructor(
         surfaceView.setEGLContextClientVersion(3)
         addView(surfaceView)
 
-        val renderer = VideoRenderer(context)
-        renderer.callBack = object : VideoRenderer.CallBack {
+        val renderer = VideoRender(context)
+        renderer.callBack = object : VideoRender.CallBack {
             override fun onVideoSize(videoWidth: Int, videoHeight: Int) {
                 resetSurfaceViewSize(videoWidth, videoHeight)
             }

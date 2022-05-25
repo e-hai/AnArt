@@ -53,7 +53,7 @@ public class MoviePlayer {
     private boolean mLoop;
     private int mVideoWidth;
     private int mVideoHeight;
-    private int frameRate;
+    int frameRate;
 
 
     /**

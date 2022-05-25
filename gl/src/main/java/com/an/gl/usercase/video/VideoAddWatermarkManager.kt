@@ -2,14 +2,13 @@ package com.an.gl.usercase.video
 
 import android.content.Context
 import android.opengl.GLES31
-import android.util.Log
 import android.view.Surface
-import com.an.gl.R
 import com.an.gl.base.*
 import com.an.gl.base.egl.EglCore
 import com.an.gl.base.egl.EglCore.FLAG_TRY_GLES3
 import com.an.gl.base.egl.EglSurfaceBase
-import com.an.gl.usercase.LogoDraw
+import com.an.gl.usercase.WatermarkConfig
+import com.an.gl.usercase.WatermarkDraw
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -17,66 +16,74 @@ import java.util.concurrent.TimeUnit
 class VideoAddWatermarkManager(
     val context: Context,
     private val fromFile: File,
-    private val outFile: File
+    private val outFile: File,
+    private val config: WatermarkConfig
 ) {
 
     companion object {
         const val TAG = "VideoAddWatermarkManager"
+        val FRAME_TIME = (1f / 30f * TimeUnit.SECONDS.toNanos(1)).toLong()//30帧每秒
     }
 
-    private lateinit var moviePlayer: MoviePlayer
-    private lateinit var movieEncoder: VideoEncoderCore
-    private lateinit var egl: EglSurfaceBase
+    private lateinit var movieDecoder: MoviePlayer      //视频解码器
+    private lateinit var movieEncoder: VideoEncoderCore //视频编码器
+    private lateinit var eglManager: EglSurfaceBase     //EGL环境管理类
     private lateinit var mediaEglManager: MediaEglManager
-    private lateinit var logoDraw: LogoDraw
+    private lateinit var watermarkDraw: WatermarkDraw
     private var width: Int = 0
     private var height: Int = 0
+    private var presentationTime: Long = 0
+
 
     init {
         initVideo()
-        initEGL(movieEncoder.inputSurface)
+        initEGL()
     }
 
-    var firstPresentationTimeUsec: Long = 0
 
     private fun initVideo() {
-        val callback = object : MoviePlayer.FrameCallback {
+        movieDecoder = MoviePlayer(fromFile, null, object : MoviePlayer.FrameCallback {
             override fun preRender(presentationTimeUsec: Long) {
-                egl.setPresentationTime(firstPresentationTimeUsec)
-                firstPresentationTimeUsec += TimeUnit.MILLISECONDS.toNanos((1f / 30f * 1000).toLong()) //30帧每秒
+
             }
 
             override fun postRender(over: Boolean) {
                 if (over) {
-                    movieEncoder.release()
+                    drawFinish()
                 } else {
                     onDrawFrame()
                 }
             }
 
             override fun loopReset() {
-                Log.d(TAG, "loopReset")
             }
-        }
-        moviePlayer = MoviePlayer(fromFile, null, callback)
-        width = moviePlayer.videoWidth
-        height = moviePlayer.videoHeight
+        })
+        width = movieDecoder.videoWidth
+        height = movieDecoder.videoHeight
 
         val bitRate = width * height
         movieEncoder = VideoEncoderCore(width, height, bitRate, outFile)
     }
 
-    /**
-     * @param inputSurface 把内容渲染到该Surface中
-     * **/
-    private fun initEGL(inputSurface: Surface) {
+
+    private fun initEGL() {
         val eglCore = EglCore(null, FLAG_TRY_GLES3)
-        egl = EglSurfaceBase(eglCore)
-        egl.createWindowSurface(inputSurface)
-        egl.makeCurrent()
+        eglManager = EglSurfaceBase(eglCore)
+        bindResultSurface()
+    }
+
+    /**
+     * 绑定渲染结果Surface
+     * **/
+    private fun bindResultSurface() {
+        //结果渲染到编码器的Surface上
+        val resultSurface = movieEncoder.inputSurface
+        eglManager.createWindowSurface(resultSurface)
+        eglManager.makeCurrent()
         onSurfaceCreated()
         onSurfaceChanged(width, height)
     }
+
 
     /**
      * 初始化配置
@@ -84,10 +91,17 @@ class VideoAddWatermarkManager(
     private fun onSurfaceCreated() {
         GLES31.glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
         mediaEglManager = MediaEglManager().apply {
-            //绑定解压出来的视频数据帧
-            moviePlayer.setOutputSurface(surface)
+            bindSourceSurface(surface)
         }
-        logoDraw = LogoDraw(context, R.drawable.watermark)
+        watermarkDraw = WatermarkDraw(context, config)
+    }
+
+
+    /**
+     * 绑定视频流源数据的Surface
+     * **/
+    private fun bindSourceSurface(surface: Surface) {
+        movieDecoder.setOutputSurface(surface)
     }
 
     /**
@@ -95,22 +109,34 @@ class VideoAddWatermarkManager(
      * **/
     private fun onSurfaceChanged(width: Int, height: Int) {
         mediaEglManager.onSizeChange(width, height)
-        logoDraw.onSizeChange(width, height)
+        watermarkDraw.onSizeChange(width, height)
     }
 
     /**
      * 绘制
      * **/
     private fun onDrawFrame() {
+        //给当前帧设置时间戳，解决给编码器设置帧数无效的问题
+        eglManager.setPresentationTime(presentationTime)
+        presentationTime += FRAME_TIME
+
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
-            logoDraw.onDraw()
+            watermarkDraw.onDraw()
         }
-        egl.swapBuffers()
+        eglManager.swapBuffers()
         movieEncoder.drainEncoder(false)
     }
 
-    fun start() {
-        moviePlayer.play()
+    private fun drawFinish() {
+        //渲染结束必须调用，否则视频无法播放
+        movieEncoder.release()
     }
+
+    fun start() {
+        movieDecoder.play()
+    }
+
 }
+
+

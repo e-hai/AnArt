@@ -10,7 +10,8 @@ import androidx.camera.core.SurfaceRequest
 import androidx.core.content.ContextCompat
 import com.an.gl.R
 import com.an.gl.base.MediaEglManager
-import com.an.gl.usercase.LogoDraw
+import com.an.gl.usercase.WatermarkConfig
+import com.an.gl.usercase.WatermarkDraw
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -19,7 +20,7 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
 
     private var surfaceRequest: SurfaceRequest? = null
     private lateinit var mediaEglManager: MediaEglManager
-    private lateinit var logoDraw: LogoDraw
+    private lateinit var watermarkDraw: WatermarkDraw
 
     fun setSurfaceRequest(request: SurfaceRequest) {
         cancelPreviousRequest()
@@ -56,7 +57,7 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
             }
             provideSurfaceRequest(surface)
         }
-        logoDraw = LogoDraw(context, R.drawable.watermark)
+        watermarkDraw = WatermarkDraw(context, WatermarkConfig(R.drawable.watermark))
     }
 
     /**
@@ -64,7 +65,7 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
      * **/
     override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
         mediaEglManager.onSizeChange(width, height)
-        logoDraw.onSizeChange(width, height)
+        watermarkDraw.onSizeChange(width, height)
     }
 
 
@@ -74,7 +75,7 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
     override fun onDrawFrame(gl: GL10) {
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
-            logoDraw.onDraw()
+            watermarkDraw.onDraw()
         }
     }
 
