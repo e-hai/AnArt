@@ -2,6 +2,7 @@ package com.an.gl.usercase.video
 
 import android.content.Context
 import android.opengl.GLES31
+import android.util.Log
 import android.view.Surface
 import com.an.gl.base.*
 import com.an.gl.base.egl.EglCore
@@ -9,7 +10,9 @@ import com.an.gl.base.egl.EglCore.FLAG_TRY_GLES3
 import com.an.gl.base.egl.EglSurfaceBase
 import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.usercase.WatermarkDraw
+import com.an.gl.util.GlUtil
 import java.io.File
+import java.lang.Exception
 import java.util.concurrent.TimeUnit
 
 
@@ -21,8 +24,9 @@ class VideoAddWatermarkManager(
 ) {
 
     companion object {
-        const val TAG = "VideoAddWatermarkManager"
-        val FRAME_TIME = (1f / 30f * TimeUnit.SECONDS.toNanos(1)).toLong()//30帧每秒
+        const val TAG = "VideoAddWatermark"
+        val SECONDS_TO_NANOS = TimeUnit.SECONDS.toNanos(1)  //一秒的纳秒长度
+        val FRAME_TIME = (1f / 30f * SECONDS_TO_NANOS).toLong()//30帧每秒
     }
 
     private lateinit var movieDecoder: MoviePlayer      //视频解码器
@@ -33,7 +37,7 @@ class VideoAddWatermarkManager(
     private var width: Int = 0
     private var height: Int = 0
     private var presentationTime: Long = 0
-
+    private var switchCount = 1 //切换水印位置的次数
 
     init {
         initVideo()
@@ -118,14 +122,21 @@ class VideoAddWatermarkManager(
     private fun onDrawFrame() {
         //给当前帧设置时间戳，解决给编码器设置帧数无效的问题
         eglManager.setPresentationTime(presentationTime)
+        checkSwitchWatermarkLocation(presentationTime)
         presentationTime += FRAME_TIME
-
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
             watermarkDraw.onDraw()
         }
         eglManager.swapBuffers()
         movieEncoder.drainEncoder(false)
+    }
+
+    private fun checkSwitchWatermarkLocation(time: Long) {
+        if (time > (switchCount * config.duration * SECONDS_TO_NANOS)) {
+            switchCount++
+            watermarkDraw.changeLocation()
+        }
     }
 
     private fun drawFinish() {

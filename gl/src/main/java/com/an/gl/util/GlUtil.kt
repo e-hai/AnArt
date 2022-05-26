@@ -1,15 +1,15 @@
 package com.an.gl.util
 
 import android.content.Context
-import android.opengl.GLES20
 import android.opengl.GLES31
 import android.util.Log
 import java.nio.*
+import javax.microedition.khronos.opengles.GL10
 
 
 object GlUtil {
 
-    private const val TAG = "Shader"
+    private const val TAG = "GlUtil"
 
 
     fun getShaderCodeFromAssets(context: Context, assetFileName: String): String {
@@ -93,6 +93,12 @@ object GlUtil {
             Log.e(TAG, msg)
             throw RuntimeException(msg)
         }
+    }
+
+    fun checkTextureMaxSize() {
+        val maxTextureSize = IntArray(1)
+        GLES31.glGetIntegerv(GL10.GL_MAX_TEXTURE_SIZE, maxTextureSize, 0)
+        Log.i(TAG, "Max texture size = " + maxTextureSize[0])
     }
 
     fun createFloatBuffer(array: FloatArray): FloatBuffer {

@@ -18,6 +18,7 @@ package com.an.gl.base;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.util.Log;
@@ -54,13 +55,55 @@ public class VideoEncoderCore {
     private MediaCodec.BufferInfo mBufferInfo;
     private int mTrackIndex;
     private boolean mMuxerStarted;
+    private float maxWidth = 720;
+    private float maxHeight = 720;
 
+    private MediaCodecInfo checkCodec(String mimeType) {
+        int numCodecs = MediaCodecList.getCodecCount();
+        for (int i = 0; i < numCodecs; i++) {
+            MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
+            if (!codecInfo.isEncoder()) {
+                continue;
+            }
+
+            String[] types = codecInfo.getSupportedTypes();
+            for (String type : types) {
+                if (type.equalsIgnoreCase(mimeType)) {
+                    MediaCodecInfo.CodecCapabilities capabilities = codecInfo.getCapabilitiesForType(mimeType);
+                    Range<Integer> widths = capabilities.getVideoCapabilities().getSupportedWidths();
+                    Range<Integer> heights = capabilities.getVideoCapabilities().getSupportedHeights();
+                    maxWidth = widths.getUpper();
+                    maxHeight = heights.getUpper();
+                    Log.d(TAG, " width min=" + widths.getLower() + "  max=" + widths.getUpper());
+                    Log.d(TAG, " height min=" + heights.getLower() + "  max=" + heights.getUpper());
+                    return codecInfo;
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * Configures encoder and muxer state, and prepares the input Surface.
      */
     public VideoEncoderCore(int width, int height, int bitRate, File outputFile)
             throws IOException {
+        checkCodec(MIME_TYPE);
+        float scale = 1f;
+        if (width > height && width > maxWidth) {
+            scale = width / maxWidth;
+        } else if (width < height && height > maxHeight) {
+            scale = height / maxHeight;
+        } else if (width > maxWidth || height > maxHeight) {
+            scale = width / maxWidth;
+        }
+        Log.d(TAG, "start width=" + width + " height=" + height);
+        Log.d(TAG, "maxWidth=" + maxWidth + " maxHeight=" + maxHeight);
+        Log.d(TAG, "scale=" + scale);
+        width = (int) (width / scale);
+        height = (int) (height / scale);
+        Log.d(TAG, "end width=" + width + " height=" + height);
+
         mBufferInfo = new MediaCodec.BufferInfo();
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
         // Set some properties.  Failing to specify some of these can cause the MediaCodec

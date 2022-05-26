@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.an.art.databinding.FragmentVideoBinding
+import com.an.gl.usercase.LocationMode
 import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.util.FileUtil
 import com.an.gl.usercase.video.VideoAddWatermarkManager
@@ -33,7 +34,7 @@ class VideoFragment : Fragment() {
                 context,
                 fromFile,
                 outFile,
-                WatermarkConfig(R.drawable.watermark)
+                WatermarkConfig(R.drawable.watermark, locationMode = LocationMode.ALL)
             ).start()
         }.start()
     }

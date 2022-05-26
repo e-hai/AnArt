@@ -4,14 +4,16 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.opengl.GLES31
 import android.opengl.GLUtils
+import android.util.Log
 import androidx.annotation.DrawableRes
 import com.an.gl.base.draw.GL_COORDINATE_SYSTEM_XY
 import com.an.gl.base.draw.SimpleDraw
 import com.an.gl.base.texture.Texture2dOes
+import com.an.gl.usercase.WatermarkDraw.Companion.TAG
 
 class WatermarkDraw(
     context: Context,
-    config: WatermarkConfig,
+    private val config: WatermarkConfig,
     texture: Texture2dOes = Texture2dOes()
 ) : SimpleDraw(texture) {
 
@@ -19,19 +21,30 @@ class WatermarkDraw(
         const val TAG = "LogoShader"
     }
 
-    private val logoBitmap = BitmapFactory.decodeResource(context.resources, config.watermarkResId)
+    private val watermarkBitmap =
+        BitmapFactory.decodeResource(context.resources, config.watermarkResId)
+    private lateinit var location: Location
 
     init {
         //正确处理纹理坐标在世界坐标的显示效果
-        val logoTextureCoord = floatArrayOf(
+        val watermarkTextureCoord = floatArrayOf(
             0.0f, 0.0f, //屏幕左上
             0.0f, 1.0f, //屏幕左下
             1.0f, 1.0f, //屏幕右下
             1.0f, 0.0f  //屏幕右上
         )
         textureCoordBuffer.clear()
-        textureCoordBuffer.put(logoTextureCoord)
+        textureCoordBuffer.put(watermarkTextureCoord)
         textureCoordBuffer.position(0)
+    }
+
+    override fun onSizeChange(width: Int, height: Int) {
+        super.onSizeChange(width, height)
+        location = Location(
+            width, height,
+            watermarkBitmap.width, watermarkBitmap.height,
+            config.margin
+        )
     }
 
     override fun onDraw() {
@@ -74,7 +87,7 @@ class WatermarkDraw(
         texture.bindTexture()
 
         //加载bitmap到纹理上
-        GLUtils.texImage2D(GLES31.GL_TEXTURE_2D, 0, logoBitmap, 0)
+        GLUtils.texImage2D(GLES31.GL_TEXTURE_2D, 0, watermarkBitmap, 0)
 
         //把绑定的纹理传进渲染管线
         GLES31.glUniform1i(textureHandle, 0)
@@ -99,17 +112,69 @@ class WatermarkDraw(
     }
 
     override fun updateViewport() {
-        GLES31.glViewport(0, 0, logoBitmap.width, logoBitmap.height)
+        GLES31.glViewport(location.x, location.y, watermarkBitmap.width, watermarkBitmap.height)
     }
 
     override fun release() {
         super.release()
-        logoBitmap.recycle()
+        watermarkBitmap.recycle()
+    }
+
+    fun changeLocation() {
+        if (config.locationMode != LocationMode.ALL) {
+            return
+        }
+        location.nextLocation()
+    }
+}
+
+class Location(
+    private val parentWidth: Int = 0,
+    private val parentHeight: Int = 0,
+    private val width: Int = 0,
+    private val height: Int = 0,
+    private val margin: Int = 0
+) {
+    var x = margin
+    var y = margin
+
+    private val locationList = listOf(
+        LocationMode.LEFT_BOTTOM,
+        LocationMode.LEFT_TOP,
+        LocationMode.RIGHT_TOP,
+        LocationMode.RIGHT_BOTTOM
+    )
+    private var locationPos = 0
+
+    fun nextLocation() {
+        val select = locationPos % locationList.size
+        when (locationList[select]) {
+            LocationMode.LEFT_BOTTOM -> {
+                x = margin
+                y = margin
+            }
+            LocationMode.LEFT_TOP -> {
+                x = margin
+                y = parentHeight - height - margin
+            }
+            LocationMode.RIGHT_TOP -> {
+                x = parentWidth - width - margin
+                y = parentHeight - height - margin
+            }
+            LocationMode.RIGHT_BOTTOM -> {
+                x = parentWidth - width - margin
+                y = margin
+            }
+            else -> {}
+        }
+        locationPos++
     }
 }
 
 data class WatermarkConfig(
     @DrawableRes val watermarkResId: Int,
+    val margin: Int = 10,               //离周围间隔
+    val duration: Long = 2,             //轮播时长
     val locationMode: LocationMode = LocationMode.LEFT_TOP
 )
 
