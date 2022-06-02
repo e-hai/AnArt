@@ -37,7 +37,6 @@ class VideoAddWatermarkManager(
     private var width: Int = 0
     private var height: Int = 0
     private var presentationTime: Long = 0
-    private var switchCount = 1 //切换水印位置的次数
 
     init {
         initVideo()
@@ -133,8 +132,7 @@ class VideoAddWatermarkManager(
     }
 
     private fun checkSwitchWatermarkLocation(time: Long) {
-        if (time > (switchCount * config.duration * SECONDS_TO_NANOS)) {
-            switchCount++
+        if (time > (config.duration * SECONDS_TO_NANOS)) {
             watermarkDraw.changeLocation()
         }
     }

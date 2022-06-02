@@ -89,20 +89,20 @@ public class VideoEncoderCore {
     public VideoEncoderCore(int width, int height, int bitRate, File outputFile)
             throws IOException {
         checkCodec(MIME_TYPE);
-        float scale = 1f;
-        if (width > height && width > maxWidth) {
-            scale = width / maxWidth;
-        } else if (width < height && height > maxHeight) {
-            scale = height / maxHeight;
-        } else if (width > maxWidth || height > maxHeight) {
-            scale = width / maxWidth;
-        }
-        Log.d(TAG, "start width=" + width + " height=" + height);
-        Log.d(TAG, "maxWidth=" + maxWidth + " maxHeight=" + maxHeight);
-        Log.d(TAG, "scale=" + scale);
-        width = (int) (width / scale);
-        height = (int) (height / scale);
-        Log.d(TAG, "end width=" + width + " height=" + height);
+//        float scale = 1f;
+//        if (width > height && width > maxWidth) {
+//            scale = width / maxWidth;
+//        } else if (width < height && height > maxHeight) {
+//            scale = height / maxHeight;
+//        } else if (width > maxWidth || height > maxHeight) {
+//            scale = width / maxWidth;
+//        }
+//        Log.d(TAG, "start width=" + width + " height=" + height);
+//        Log.d(TAG, "maxWidth=" + maxWidth + " maxHeight=" + maxHeight);
+//        Log.d(TAG, "scale=" + scale);
+//        width = (int) (width / scale);
+//        height = (int) (height / scale);
+//        Log.d(TAG, "end width=" + width + " height=" + height);
 
         mBufferInfo = new MediaCodec.BufferInfo();
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);

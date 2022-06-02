@@ -95,7 +95,7 @@ class WatermarkDraw(
         //按照绘制数据来绘制顶点
         GLES31.glDrawElements(
             GLES31.GL_TRIANGLES,          //图元的形状（点、线、三角形）
-            dataDrawOrder.size, //顶点数量
+            dataDrawOrder.size,           //顶点数量
             GLES31.GL_UNSIGNED_SHORT,     //元素类型
             drawOrderBuffer               //元素数据
         )
@@ -121,10 +121,7 @@ class WatermarkDraw(
     }
 
     fun changeLocation() {
-        if (config.locationMode != LocationMode.ALL) {
-            return
-        }
-        location.nextLocation()
+       location.change()
     }
 }
 
@@ -135,39 +132,17 @@ class Location(
     private val height: Int = 0,
     private val margin: Int = 0
 ) {
-    var x = margin
-    var y = margin
+    var x: Int
+    var y: Int
 
-    private val locationList = listOf(
-        LocationMode.LEFT_BOTTOM,
-        LocationMode.LEFT_TOP,
-        LocationMode.RIGHT_TOP,
-        LocationMode.RIGHT_BOTTOM
-    )
-    private var locationPos = 0
+    init {
+        x = margin
+        y = parentHeight - height - margin
+    }
 
-    fun nextLocation() {
-        val select = locationPos % locationList.size
-        when (locationList[select]) {
-            LocationMode.LEFT_BOTTOM -> {
-                x = margin
-                y = margin
-            }
-            LocationMode.LEFT_TOP -> {
-                x = margin
-                y = parentHeight - height - margin
-            }
-            LocationMode.RIGHT_TOP -> {
-                x = parentWidth - width - margin
-                y = parentHeight - height - margin
-            }
-            LocationMode.RIGHT_BOTTOM -> {
-                x = parentWidth - width - margin
-                y = margin
-            }
-            else -> {}
-        }
-        locationPos++
+    fun change() {
+        x = parentWidth - width - margin
+        y = margin
     }
 }
 
@@ -183,5 +158,5 @@ enum class LocationMode {
     LEFT_BOTTOM, //左下角
     RIGHT_TOP,   //右上角
     RIGHT_BOTTOM,//右下角
-    ALL          //四个角定时轮播
+    RUN          //对角移动
 }

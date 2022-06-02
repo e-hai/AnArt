@@ -26,16 +26,16 @@ class VideoFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Thread {
-            val context = context ?: return@Thread
-            val fromFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
-            val outFile: File = FileUtil.createFile(context, "456.mp4")
-            VideoAddWatermarkManager(
-                context,
-                fromFile,
-                outFile,
-                WatermarkConfig(R.drawable.watermark, locationMode = LocationMode.ALL)
-            ).start()
-        }.start()
+//        Thread {
+//            val context = context ?: return@Thread
+//            val fromFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
+//            val outFile: File = FileUtil.createFile(context, "456.mp4")
+//            VideoAddWatermarkManager(
+//                context,
+//                fromFile,
+//                outFile,
+//                WatermarkConfig(R.drawable.watermark, locationMode = LocationMode.RUN)
+//            ).start()
+//        }.start()
     }
 }
