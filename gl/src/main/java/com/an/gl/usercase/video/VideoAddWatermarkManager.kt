@@ -61,11 +61,11 @@ class VideoAddWatermarkManager(
             override fun loopReset() {
             }
         })
-        width = movieDecoder.videoWidth
-        height = movieDecoder.videoHeight
-
-        val bitRate = width * height
-        movieEncoder = VideoEncoderCore(width, height, bitRate, outFile)
+        val bitRate = movieDecoder.videoWidth * movieDecoder.videoHeight
+        movieEncoder = VideoEncoderCore(movieDecoder.videoWidth,
+            movieDecoder.videoHeight, bitRate, outFile)
+        width = movieEncoder.mWidth.toInt()
+        height = movieEncoder.mHeight.toInt()
     }
 
 
@@ -121,7 +121,7 @@ class VideoAddWatermarkManager(
     private fun onDrawFrame() {
         //给当前帧设置时间戳，解决给编码器设置帧数无效的问题
         eglManager.setPresentationTime(presentationTime)
-        checkSwitchWatermarkLocation(presentationTime)
+        watermarkDraw.setPresentationTime(presentationTime / SECONDS_TO_NANOS)
         presentationTime += FRAME_TIME
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
@@ -129,12 +129,6 @@ class VideoAddWatermarkManager(
         }
         eglManager.swapBuffers()
         movieEncoder.drainEncoder(false)
-    }
-
-    private fun checkSwitchWatermarkLocation(time: Long) {
-        if (time > (config.duration * SECONDS_TO_NANOS)) {
-            watermarkDraw.changeLocation()
-        }
     }
 
     private fun drawFinish() {

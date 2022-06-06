@@ -18,11 +18,12 @@ class WatermarkDraw(
 ) : SimpleDraw(texture) {
 
     companion object {
-        const val TAG = "LogoShader"
+        const val TAG = "WatermarkDraw"
     }
 
-    private val watermarkBitmap =
-        BitmapFactory.decodeResource(context.resources, config.watermarkResId)
+    private val watermarkBitmap = BitmapFactory.decodeResource(
+        context.resources, config.watermarkResId
+    )
     private lateinit var location: Location
 
     init {
@@ -41,15 +42,21 @@ class WatermarkDraw(
     override fun onSizeChange(width: Int, height: Int) {
         super.onSizeChange(width, height)
         location = Location(
-            width, height,
-            watermarkBitmap.width, watermarkBitmap.height,
+            config.locationMode,
+            config.switchingTime,
+            width,
+            height,
+            watermarkBitmap.width,
+            watermarkBitmap.height,
             config.margin
         )
     }
 
     override fun onDraw() {
+        //纹理重叠时，设置有透明度背景
         GLES31.glEnable(GLES31.GL_BLEND)
         GLES31.glBlendFunc(GLES31.GL_ONE, GLES31.GL_ONE_MINUS_SRC_ALPHA)
+
         //设置视图区域
         updateViewport()
 
@@ -112,7 +119,7 @@ class WatermarkDraw(
     }
 
     override fun updateViewport() {
-        GLES31.glViewport(location.x, location.y, watermarkBitmap.width, watermarkBitmap.height)
+        location.updateViewport()
     }
 
     override fun release() {
@@ -120,43 +127,116 @@ class WatermarkDraw(
         watermarkBitmap.recycle()
     }
 
-    fun changeLocation() {
-       location.change()
+    fun setPresentationTime(timeSeconds: Long) {
+        location.updateTime(timeSeconds)
     }
+
 }
 
 class Location(
-    private val parentWidth: Int = 0,
-    private val parentHeight: Int = 0,
-    private val width: Int = 0,
-    private val height: Int = 0,
-    private val margin: Int = 0
+    private val mode: Mode,
+    private val switchingTime: Long,
+    private val screenWidth: Int,      //屏幕宽
+    private val screenHeight: Int,     //屏幕高
+    private val watermarkWidth: Int,   //水印宽
+    private val watermarkHeight: Int,  //水印高
+    private val margin: Int = 0        //水印离屏幕的间隔
 ) {
-    var x: Int
-    var y: Int
+
+    private var viewportX: Int = 0
+    private var viewportY: Int = 0
+    private var viewportWidth: Int = 0
+    private var viewportHeight: Int = 0
+    private var modeRunHadChange: Boolean = false
 
     init {
-        x = margin
-        y = parentHeight - height - margin
+        initSize()
+        when (mode) {
+            Mode.RUN -> inTheLeftTop()
+            Mode.LEFT_TOP -> inTheLeftTop()
+            Mode.LEFT_BOTTOM -> inTheLeftBottom()
+            Mode.RIGHT_TOP -> inTheRightTop()
+            Mode.RIGHT_BOTTOM -> inTheRightBottom()
+        }
     }
 
-    fun change() {
-        x = parentWidth - width - margin
-        y = margin
+    private fun initSize() {
+        val scale = if (screenWidth > screenHeight) {
+            screenWidth.toFloat() / UI_PX_LONG
+        } else {
+            screenWidth.toFloat() / UI_PX_SHORT
+        }
+        viewportWidth = (watermarkWidth * scale).toInt()
+        viewportHeight = (watermarkHeight * scale).toInt()
+        Log.d(
+            TAG,
+            "screenWidth=$screenWidth screenHeight=$screenHeight "
+                    + "watermarkWidth=$watermarkWidth watermarkHeight=$watermarkHeight "
+                    + "viewportWidth=$viewportWidth viewportHeight=$viewportHeight"
+        )
+    }
+
+    /**
+     * 设置位置在左上角
+     * **/
+    private fun inTheLeftTop() {
+        viewportX = margin
+        viewportY = screenHeight - viewportHeight - margin
+    }
+
+    /**
+     * 设置位置在左下角
+     * **/
+    private fun inTheLeftBottom() {
+        viewportX = margin
+        viewportY = margin
+    }
+
+    /**
+     * 设置在右下角
+     * **/
+    private fun inTheRightTop() {
+        viewportX = screenWidth - viewportWidth - margin
+        viewportY = screenHeight - viewportHeight - margin
+    }
+
+    /**
+     * 设置在右下角
+     * **/
+    private fun inTheRightBottom() {
+        viewportX = screenWidth - viewportWidth - margin
+        viewportY = margin
+    }
+
+    fun updateViewport() {
+        GLES31.glViewport(viewportX, viewportY, viewportWidth, viewportHeight)
+    }
+
+    fun updateTime(timeSeconds: Long) {
+        if (!modeRunHadChange && timeSeconds > switchingTime && mode == Mode.RUN) {
+            modeRunHadChange = true
+            inTheRightBottom()
+        }
+    }
+
+    enum class Mode {
+        LEFT_TOP,    //左上角
+        LEFT_BOTTOM, //左下角
+        RIGHT_TOP,   //右上角
+        RIGHT_BOTTOM,//右下角
+        RUN          //对角移动
+    }
+
+    companion object {
+        const val UI_PX_LONG: Float = 640f  //UI设计图的长边，用于水印实际绘制到屏幕时，计算屏幕缩放比例，得到合适的大小
+        const val UI_PX_SHORT: Float = 360f //UI设计图的短边
     }
 }
 
 data class WatermarkConfig(
     @DrawableRes val watermarkResId: Int,
-    val margin: Int = 10,               //离周围间隔
-    val duration: Long = 2,             //轮播时长
-    val locationMode: LocationMode = LocationMode.LEFT_TOP
+    val margin: Int = 10,             //离周围间隔
+    val switchingTime: Long = 2,      //切换时机（仅在RUN模式下有效）
+    val locationMode: Location.Mode = Location.Mode.RUN
 )
 
-enum class LocationMode {
-    LEFT_TOP,    //左上角
-    LEFT_BOTTOM, //左下角
-    RIGHT_TOP,   //右上角
-    RIGHT_BOTTOM,//右下角
-    RUN          //对角移动
-}

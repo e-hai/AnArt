@@ -55,10 +55,12 @@ public class VideoEncoderCore {
     private MediaCodec.BufferInfo mBufferInfo;
     private int mTrackIndex;
     private boolean mMuxerStarted;
-    private float maxWidth = 720;
-    private float maxHeight = 720;
+    public float mWidth = 720;
+    public float mHeight = 1280;
 
-    private MediaCodecInfo checkCodec(String mimeType) {
+    private void setPrefaceSize(float width, float height) {
+        mWidth = width;
+        mHeight = height;
         int numCodecs = MediaCodecList.getCodecCount();
         for (int i = 0; i < numCodecs; i++) {
             MediaCodecInfo codecInfo = MediaCodecList.getCodecInfoAt(i);
@@ -68,19 +70,33 @@ public class VideoEncoderCore {
 
             String[] types = codecInfo.getSupportedTypes();
             for (String type : types) {
-                if (type.equalsIgnoreCase(mimeType)) {
-                    MediaCodecInfo.CodecCapabilities capabilities = codecInfo.getCapabilitiesForType(mimeType);
+                if (type.equalsIgnoreCase(MIME_TYPE)) {
+                    MediaCodecInfo.CodecCapabilities capabilities = codecInfo.getCapabilitiesForType(MIME_TYPE);
                     Range<Integer> widths = capabilities.getVideoCapabilities().getSupportedWidths();
                     Range<Integer> heights = capabilities.getVideoCapabilities().getSupportedHeights();
-                    maxWidth = widths.getUpper();
-                    maxHeight = heights.getUpper();
+                    float maxWidth = widths.getUpper();
+                    float maxHeight = heights.getUpper();
                     Log.d(TAG, " width min=" + widths.getLower() + "  max=" + widths.getUpper());
                     Log.d(TAG, " height min=" + heights.getLower() + "  max=" + heights.getUpper());
-                    return codecInfo;
+
+                    float scale = 1f;
+                    if (width > height && width > maxWidth) {
+                        scale = width / maxWidth;
+                    } else if (width < height && height > maxHeight) {
+                        scale = height / maxHeight;
+                    } else if (width > maxWidth || height > maxHeight) {
+                        scale = width / maxWidth;
+                    }
+                    Log.d(TAG, "start width=" + width + " height=" + height);
+                    Log.d(TAG, "maxWidth=" + maxWidth + " maxHeight=" + maxHeight);
+                    Log.d(TAG, "scale=" + scale);
+                    mWidth = (int) (width / scale);
+                    mHeight = (int) (height / scale);
+                    Log.d(TAG, "end width=" + width + " height=" + height);
+                    return;
                 }
             }
         }
-        return null;
     }
 
     /**
@@ -88,24 +104,10 @@ public class VideoEncoderCore {
      */
     public VideoEncoderCore(int width, int height, int bitRate, File outputFile)
             throws IOException {
-        checkCodec(MIME_TYPE);
-//        float scale = 1f;
-//        if (width > height && width > maxWidth) {
-//            scale = width / maxWidth;
-//        } else if (width < height && height > maxHeight) {
-//            scale = height / maxHeight;
-//        } else if (width > maxWidth || height > maxHeight) {
-//            scale = width / maxWidth;
-//        }
-//        Log.d(TAG, "start width=" + width + " height=" + height);
-//        Log.d(TAG, "maxWidth=" + maxWidth + " maxHeight=" + maxHeight);
-//        Log.d(TAG, "scale=" + scale);
-//        width = (int) (width / scale);
-//        height = (int) (height / scale);
-//        Log.d(TAG, "end width=" + width + " height=" + height);
+        setPrefaceSize(width, height);
 
         mBufferInfo = new MediaCodec.BufferInfo();
-        MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
+        MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, (int) mWidth, (int) mHeight);
         // Set some properties.  Failing to specify some of these can cause the MediaCodec
         // configure() call to throw an unhelpful exception.
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
@@ -133,6 +135,7 @@ public class VideoEncoderCore {
 
         mTrackIndex = -1;
         mMuxerStarted = false;
+
     }
 
     /**
