@@ -48,7 +48,7 @@ open class SimpleDraw(val texture: Texture) : Draw {
     lateinit var drawOrderBuffer: ShortBuffer    //绘制路径
 
     var programHandle: Int = 0       //OpenGL ES Program索引
-    var vertexCoorHandle: Int = 0    //顶点索引
+    var vertexCoorHandle: Int = 0    //顶点坐标索引
     var textureCoorHandle: Int = 0   //纹理坐标索引
     var textureHandle: Int = 0       //纹理索引
     var mvpMatrixHandle: Int = 0     //总变换矩阵索引
@@ -70,14 +70,14 @@ open class SimpleDraw(val texture: Texture) : Draw {
 
     override fun getVertexShadeCode(): String {
         return """
-            attribute vec4 $GL_NAME_VERTEX_COORD;
-            attribute vec4 $GL_NAME_TEXTURE_COORD;
             uniform mat4 $GL_NAME_MVP_MATRIX;
+            attribute vec4 $GL_NAME_VERTEX_COORD;
+            attribute vec2 $GL_NAME_TEXTURE_COORD;
             varying vec2 vTexCoordinate;
             
             void main(){
-                vTexCoordinate = ($GL_NAME_MVP_MATRIX * $GL_NAME_TEXTURE_COORD).xy;
-                gl_Position = aPosition;
+                vTexCoordinate = $GL_NAME_TEXTURE_COORD;
+                gl_Position = $GL_NAME_MVP_MATRIX * $GL_NAME_VERTEX_COORD;
             }
         """.trimIndent()
     }
@@ -128,12 +128,12 @@ open class SimpleDraw(val texture: Texture) : Draw {
 
         //将顶点坐标数据传进渲染管线
         GLES31.glVertexAttribPointer(
-            vertexCoorHandle,
-            GL_COORDINATE_SYSTEM_XY,
-            GLES31.GL_FLOAT,
-            false,
-            0,
-            vertexCoordBuffer
+            vertexCoorHandle,            //顶点坐标索引
+            GL_COORDINATE_SYSTEM_XY,     //每个顶点坐标的组成分量数，如(x,y) (x,y,z)等等，如果数据分量size=2,但是顶点变量attribute vec4，那么该方法会把z、w自动设置默认为0、1
+            GLES31.GL_FLOAT,             //数据类型
+            false,             //如果赋值给 attribute 的数据为int值,而 attribute 为float值的时候,是否需要被归一化,归一化就是带符号的值转化为(-1,1), 不带符号的值转化为(0,1)。不过我们传递的数据一般都与Attribute相对应
+            0,                     //第五个参数 stride 是间隔的意思,举个例子, 刚才为了画三角形,需要传入 12 个值。那么可以直接创建一个 12 个值的数组传入,也可以创建一个 15 个值的数组传入,其中第 5、10、15 这 4 个值为无用值, 第 1234、6789、1112131415 这 12 个值是有用的,然后把 size 写为 4,stride 写 为 5,GPU 就知道 5 个值为一个单元进行读取,然后前四个为有效值,使用前四个对 attribute 进行赋值
+            vertexCoordBuffer            //顶点坐标数据
         )
         //启用顶点坐标属性，这里会影响后续的顶点操作（纹理坐标映射、顶点绘制）
         GLES31.glEnableVertexAttribArray(vertexCoorHandle)

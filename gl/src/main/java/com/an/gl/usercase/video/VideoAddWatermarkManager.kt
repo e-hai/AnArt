@@ -1,6 +1,7 @@
 package com.an.gl.usercase.video
 
 import android.content.Context
+import android.net.Uri
 import android.opengl.GLES31
 import android.util.Log
 import android.view.Surface
@@ -26,7 +27,7 @@ class VideoAddWatermarkManager(
     companion object {
         const val TAG = "VideoAddWatermark"
         val SECONDS_TO_NANOS = TimeUnit.SECONDS.toNanos(1)  //一秒的纳秒长度
-        val FRAME_TIME = (1f / 30f * SECONDS_TO_NANOS).toLong()//30帧每秒
+        val FRAME_TIME = (1f / 30f * SECONDS_TO_NANOS).toLong()     //30帧每秒
     }
 
     private lateinit var movieDecoder: MoviePlayer      //视频解码器
@@ -45,7 +46,7 @@ class VideoAddWatermarkManager(
 
 
     private fun initVideo() {
-        movieDecoder = MoviePlayer(fromFile, null, object : MoviePlayer.FrameCallback {
+        movieDecoder = MoviePlayer(context, fromFile, null, object : MoviePlayer.FrameCallback {
             override fun preRender(presentationTimeUsec: Long) {
 
             }
@@ -62,8 +63,10 @@ class VideoAddWatermarkManager(
             }
         })
         val bitRate = movieDecoder.videoWidth * movieDecoder.videoHeight
-        movieEncoder = VideoEncoderCore(movieDecoder.videoWidth,
-            movieDecoder.videoHeight, bitRate, outFile)
+        movieEncoder = VideoEncoderCore(
+            movieDecoder.videoWidth,
+            movieDecoder.videoHeight, bitRate, outFile
+        )
         width = movieEncoder.mWidth.toInt()
         height = movieEncoder.mHeight.toInt()
     }

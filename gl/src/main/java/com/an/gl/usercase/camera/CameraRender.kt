@@ -57,7 +57,7 @@ class CameraRender(private val context: Context, private val onRequestRender: ()
             }
             provideSurfaceRequest(surface)
         }
-        watermarkDraw = WatermarkDraw(context, WatermarkConfig(R.drawable.watermark))
+//        watermarkDraw = WatermarkDraw(context, WatermarkConfig(R.drawable.watermark))
     }
 
     /**

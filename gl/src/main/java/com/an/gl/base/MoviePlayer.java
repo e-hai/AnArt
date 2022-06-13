@@ -16,9 +16,11 @@
 
 package com.an.gl.base;
 
+import android.content.Context;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -27,6 +29,7 @@ import android.view.Surface;
 import androidx.annotation.Nullable;
 
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -101,7 +104,7 @@ public class MoviePlayer {
      * @param frameCallback Callback object, used to pace output.
      * @throws IOException
      */
-    public MoviePlayer(File sourceFile, Surface outputSurface, @Nullable FrameCallback frameCallback)
+    public MoviePlayer(Context context, File sourceFile, Surface outputSurface, @Nullable FrameCallback frameCallback)
             throws IOException {
         mSourceFile = sourceFile;
         mOutputSurface = outputSurface;
@@ -114,7 +117,7 @@ public class MoviePlayer {
         MediaExtractor extractor = null;
         try {
             extractor = new MediaExtractor();
-            extractor.setDataSource(sourceFile.toString());
+            extractor.setDataSource(sourceFile.getPath());
             int trackIndex = selectTrack(extractor);
             if (trackIndex < 0) {
                 throw new RuntimeException("No video track found in " + mSourceFile);
@@ -184,9 +187,9 @@ public class MoviePlayer {
 
         // The MediaExtractor error messages aren't very useful.  Check to see if the input
         // file exists so we can throw a better one if it's not there.
-        if (!mSourceFile.canRead()) {
-            throw new FileNotFoundException("Unable to read " + mSourceFile);
-        }
+//        if (!mSourceFile.canRead()) {
+//            throw new FileNotFoundException("Unable to read " + mSourceFile);
+//        }
 
         try {
             extractor = new MediaExtractor();

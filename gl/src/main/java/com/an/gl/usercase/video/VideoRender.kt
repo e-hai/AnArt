@@ -34,7 +34,7 @@ class VideoRender(private val context: Context) : GLSurfaceView.Renderer {
             }
             initVideo(surface)
         }
-        watermarkDraw = WatermarkDraw(context, WatermarkConfig(R.drawable.watermark))
+//        watermarkDraw = WatermarkDraw(context, WatermarkConfig(R.drawable.watermark))
     }
 
     /**
@@ -57,7 +57,7 @@ class VideoRender(private val context: Context) : GLSurfaceView.Renderer {
 
 
     private fun initVideo(surface: Surface) {
-        moviePlayer = MoviePlayer(videoFile, surface, object : MoviePlayer.FrameCallback {
+        moviePlayer = MoviePlayer(context,videoFile, surface, object : MoviePlayer.FrameCallback {
             override fun preRender(presentationTimeUsec: Long) {
             }
 
