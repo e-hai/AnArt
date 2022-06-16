@@ -1,7 +1,6 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
-    id 'com.google.gms.google-services'
 }
 
 android {
@@ -49,10 +48,4 @@ dependencies {
     implementation("androidx.camera:camera-view:${camerax_version}")
     // If you want to additionally use the CameraX Extensions library
     implementation("androidx.camera:camera-extensions:${camerax_version}")
-
-    //Firebase
-    implementation platform('com.google.firebase:firebase-bom:29.0.3')
-    implementation 'com.google.firebase:firebase-analytics'
-    //ML
-    implementation 'com.google.mlkit:face-detection:16.1.5'
 }
