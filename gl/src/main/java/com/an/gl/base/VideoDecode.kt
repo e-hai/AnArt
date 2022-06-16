@@ -13,245 +13,203 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.an.gl.base
 
-package com.an.gl.base;
-
-import android.content.Context;
-import android.media.MediaCodec;
-import android.media.MediaExtractor;
-import android.media.MediaFormat;
-import android.net.Uri;
-import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
-import android.view.Surface;
-
-import androidx.annotation.Nullable;
-
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
+import android.media.MediaCodec
+import kotlin.jvm.Volatile
+import kotlin.Throws
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.os.Handler
+import android.os.Message
+import android.util.Log
+import android.view.Surface
+import java.io.File
+import java.io.IOException
+import java.lang.RuntimeException
 
 /**
- * Plays the video track from a movie file to a Surface.
- * <p>
- * TODO: needs more advanced shuttle controls (pause/resume, skip)
+ * 视频解码器
  */
-public class MoviePlayer {
-    private static final String TAG = "MoviePlayer";
-    private static final boolean VERBOSE = true;
-
+class VideoDecode(
+    private val mSourceFile: File,
+    private var mOutputSurface: Surface?,
+    private val mFrameCallback: FrameCallback?
+) {
     // Declare this here to reduce allocations.
-    private MediaCodec.BufferInfo mBufferInfo = new MediaCodec.BufferInfo();
+    private val mBufferInfo = MediaCodec.BufferInfo()
 
     // May be set/read by different threads.
-    private volatile boolean mIsStopRequested;
+    @Volatile
+    private var mIsStopRequested = false
+    private var mLoop = false
 
-    private File mSourceFile;
-    private Surface mOutputSurface;
-    private FrameCallback mFrameCallback;
-    private boolean mLoop;
-    private int mVideoWidth;
-    private int mVideoHeight;
-    int frameRate;
+    /**
+     * Returns the width, in pixels, of the video.
+     */
+    var videoWidth = 0
 
+    /**
+     * Returns the height, in pixels, of the video.
+     */
+    var videoHeight = 0
+    var frameRate = 0
 
     /**
      * Interface to be implemented by class that manages playback UI.
-     * <p>
+     *
+     *
      * Callback methods will be invoked on the UI thread.
      */
-    public interface PlayerFeedback {
-        void playbackStopped();
+    interface PlayerFeedback {
+        fun playbackStopped()
     }
 
-
     /**
-     * Callback invoked when rendering video frames.  The MoviePlayer client must
+     * Callback invoked when rendering video frames.  The VideoDecode client must
      * provide one of these.
      */
-    public interface FrameCallback {
+    interface FrameCallback {
         /**
          * Called immediately before the frame is rendered.
          *
          * @param presentationTimeUsec The desired presentation time, in microseconds.
          */
-        void preRender(long presentationTimeUsec);
+        fun preRender(presentationTimeUsec: Long)
 
         /**
          * Called immediately after the frame render call returns.  The frame may not have
          * actually been rendered yet.
          * TODO: is this actually useful?
          */
-        void postRender(boolean over);
+        fun postRender()
 
         /**
          * Called after the last frame of a looped movie has been rendered.  This allows the
          * callback to adjust its expectations of the next presentation time stamp.
          */
-        void loopReset();
+        fun finishRender()
     }
 
 
     /**
-     * Constructs a MoviePlayer.
+     * Constructs a VideoDecode.
      *
      * @param sourceFile    The video file to open.
      * @param outputSurface The Surface where frames will be sent.
      * @param frameCallback Callback object, used to pace output.
      * @throws IOException
      */
-    public MoviePlayer(Context context, File sourceFile, Surface outputSurface, @Nullable FrameCallback frameCallback)
-            throws IOException {
-        mSourceFile = sourceFile;
-        mOutputSurface = outputSurface;
-        mFrameCallback = frameCallback;
+    init {
 
         // Pop the file open and pull out the video characteristics.
         // TODO: consider leaving the extractor open.  Should be able to just seek back to
         //       the start after each iteration of play.  Need to rearrange the API a bit --
         //       currently play() is taking an all-in-one open+work+release approach.
-        MediaExtractor extractor = null;
+        var extractor: MediaExtractor? = null
         try {
-            extractor = new MediaExtractor();
-            extractor.setDataSource(sourceFile.getPath());
-            int trackIndex = selectTrack(extractor);
+            extractor = MediaExtractor()
+            extractor.setDataSource(mSourceFile.path)
+            val trackIndex = selectTrack(extractor)
             if (trackIndex < 0) {
-                throw new RuntimeException("No video track found in " + mSourceFile);
+                throw RuntimeException("No video track found in $mSourceFile")
             }
-            extractor.selectTrack(trackIndex);
-
-            MediaFormat format = extractor.getTrackFormat(trackIndex);
-            mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
-            mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+            extractor.selectTrack(trackIndex)
+            val format = extractor.getTrackFormat(trackIndex)
+            videoWidth = format.getInteger(MediaFormat.KEY_WIDTH)
+            videoHeight = format.getInteger(MediaFormat.KEY_HEIGHT)
             if (format.containsKey(MediaFormat.KEY_FRAME_RATE)) {
-                frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE);
+                frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE)
             }
-            long duration = format.getLong(MediaFormat.KEY_DURATION);
+            val duration = format.getLong(MediaFormat.KEY_DURATION)
             if (VERBOSE) {
-                Log.d(TAG, "Video size is " + mVideoWidth + "x" + mVideoHeight + " duration=" + duration + " frameRate=" + frameRate);
+                Log.d(
+                    TAG,
+                    "Video size is " + videoWidth + "x" + videoHeight + " duration=" + duration + " frameRate=" + frameRate
+                )
             }
         } finally {
-            if (extractor != null) {
-                extractor.release();
-            }
+            extractor?.release()
         }
     }
 
-    public void setOutputSurface(Surface surface) {
-        mOutputSurface = surface;
-    }
-
-    /**
-     * Returns the width, in pixels, of the video.
-     */
-    public int getVideoWidth() {
-        return mVideoWidth;
-    }
-
-    /**
-     * Returns the height, in pixels, of the video.
-     */
-    public int getVideoHeight() {
-        return mVideoHeight;
+    fun setOutputSurface(surface: Surface) {
+        mOutputSurface = surface
     }
 
     /**
      * Sets the loop mode.  If true, playback will loop forever.
      */
-    public void setLoopMode(boolean loopMode) {
-        mLoop = loopMode;
+    fun setLoopMode(loopMode: Boolean) {
+        mLoop = loopMode
     }
 
     /**
      * Asks the player to stop.  Returns without waiting for playback to halt.
-     * <p>
+     *
+     *
      * Called from arbitrary thread.
      */
-    public void requestStop() {
-        mIsStopRequested = true;
+    fun requestStop() {
+        mIsStopRequested = true
     }
 
     /**
      * Decodes the video stream, sending frames to the surface.
-     * <p>
+     *
+     *
      * Does not return until video playback is complete, or we get a "stop" signal from
      * frameCallback.
      */
-    public void play() throws IOException {
-        MediaExtractor extractor = null;
-        MediaCodec decoder = null;
+    @Throws(IOException::class)
+    fun play() {
+        var extractor: MediaExtractor? = null
+        var decoder: MediaCodec? = null
 
         // The MediaExtractor error messages aren't very useful.  Check to see if the input
         // file exists so we can throw a better one if it's not there.
 //        if (!mSourceFile.canRead()) {
 //            throw new FileNotFoundException("Unable to read " + mSourceFile);
 //        }
-
         try {
-            extractor = new MediaExtractor();
-            extractor.setDataSource(mSourceFile.toString());
-            int trackIndex = selectTrack(extractor);
+            extractor = MediaExtractor()
+            extractor.setDataSource(mSourceFile.toString())
+            val trackIndex = selectTrack(extractor)
             if (trackIndex < 0) {
-                throw new RuntimeException("No video track found in " + mSourceFile);
+                throw RuntimeException("No video track found in $mSourceFile")
             }
-            extractor.selectTrack(trackIndex);
-
-            MediaFormat format = extractor.getTrackFormat(trackIndex);
+            extractor.selectTrack(trackIndex)
+            val format = extractor.getTrackFormat(trackIndex)
 
             // Create a MediaCodec decoder, and configure it with the MediaFormat from the
             // extractor.  It's very important to use the format from the extractor because
             // it contains a copy of the CSD-0/CSD-1 codec-specific data chunks.
-            String mime = format.getString(MediaFormat.KEY_MIME);
-            decoder = MediaCodec.createDecoderByType(mime);
-            decoder.configure(format, mOutputSurface, null, 0);
-            decoder.start();
-
-            doExtract(extractor, trackIndex, decoder, mFrameCallback);
+            val mime = format.getString(MediaFormat.KEY_MIME)
+            decoder = MediaCodec.createDecoderByType(mime!!)
+            decoder.configure(format, mOutputSurface, null, 0)
+            decoder.start()
+            doExtract(extractor, trackIndex, decoder, mFrameCallback)
         } finally {
             // release everything we grabbed
             if (decoder != null) {
-                decoder.stop();
-                decoder.release();
-                decoder = null;
+                decoder.stop()
+                decoder.release()
+                decoder = null
             }
             if (extractor != null) {
-                extractor.release();
-                extractor = null;
+                extractor.release()
+                extractor = null
             }
         }
-    }
-
-    /**
-     * Selects the video track, if any.
-     *
-     * @return the track index, or -1 if no video track is found.
-     */
-    private static int selectTrack(MediaExtractor extractor) {
-        // Select the first video track we find, ignore the rest.
-        int numTracks = extractor.getTrackCount();
-        for (int i = 0; i < numTracks; i++) {
-            MediaFormat format = extractor.getTrackFormat(i);
-            String mime = format.getString(MediaFormat.KEY_MIME);
-            if (mime.startsWith("video/")) {
-                if (VERBOSE) {
-                    Log.d(TAG, "Extractor selected track " + i + " (" + mime + "): " + format);
-                }
-                return i;
-            }
-        }
-
-        return -1;
     }
 
     /**
      * Work loop.  We execute here until we run out of video or are told to stop.
      */
-    private void doExtract(MediaExtractor extractor, int trackIndex, MediaCodec decoder,
-                           FrameCallback frameCallback) {
+    private fun doExtract(
+        extractor: MediaExtractor, trackIndex: Int, decoder: MediaCodec,
+        frameCallback: FrameCallback?
+    ) {
         // We need to strike a balance between providing input and reading output that
         // operates efficiently without delays on the output side.
         //
@@ -309,124 +267,120 @@ public class MoviePlayer {
         //
         // If you want to experiment, set the VERBOSE flag to true and watch the behavior
         // in logcat.  Use "logcat -v threadtime" to see sub-second timing.
-
-        final int TIMEOUT_USEC = 10000;
-        int inputChunk = 0;
-        long firstInputTimeNsec = -1;
-
-        boolean outputDone = false;
-        boolean inputDone = false;
-
-
+        val TIMEOUT_USEC = 10000
+        var inputChunk = 0
+        var firstInputTimeNsec: Long = -1
+        var outputDone = false
+        var inputDone = false
         while (!outputDone) {
-            if (VERBOSE) Log.d(TAG, "loop");
+            if (VERBOSE) Log.d(TAG, "loop")
             if (mIsStopRequested) {
-                Log.d(TAG, "Stop requested");
-                return;
+                Log.d(TAG, "Stop requested")
+                return
             }
 
             // 放入一帧数据
             if (!inputDone) {
                 //获取可用的输入缓存区域的索引
-                int inputBufIndex = decoder.dequeueInputBuffer(TIMEOUT_USEC);
+                val inputBufIndex = decoder.dequeueInputBuffer(TIMEOUT_USEC.toLong())
                 if (inputBufIndex >= 0) {
-                    if (firstInputTimeNsec == -1) {
-                        firstInputTimeNsec = System.nanoTime();
+                    if (firstInputTimeNsec == -1L) {
+                        firstInputTimeNsec = System.nanoTime()
                     }
                     //根据索引获得可用缓存
-                    ByteBuffer inputBuf = decoder.getInputBuffer(inputBufIndex);
+                    val inputBuf = decoder.getInputBuffer(inputBufIndex)
                     // Read the sample data into the ByteBuffer.  This neither respects nor
                     // updates inputBuf's position, limit, etc.
                     // Extractor的readSampleData()从视频中读取数据到输入缓存中
                     // decoder.queueInputBuffer()把缓存放入缓存队列中
                     // chunkSize小于0代表视频全部数据都读完了
-                    int chunkSize = extractor.readSampleData(inputBuf, 0);
+                    val chunkSize = extractor.readSampleData(inputBuf!!, 0)
                     if (chunkSize < 0) {
                         // End of stream -- send empty frame with EOS flag set.
-                        decoder.queueInputBuffer(inputBufIndex, 0, 0, 0L,
-                                MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        inputDone = true;
-                        if (VERBOSE) Log.d(TAG, "sent input EOS");
+                        decoder.queueInputBuffer(
+                            inputBufIndex, 0, 0, 0L,
+                            MediaCodec.BUFFER_FLAG_END_OF_STREAM
+                        )
+                        inputDone = true
+                        if (VERBOSE) Log.d(TAG, "sent input EOS")
                     } else {
-                        if (extractor.getSampleTrackIndex() != trackIndex) {
-                            Log.w(TAG, "WEIRD: got sample from track " +
-                                    extractor.getSampleTrackIndex() + ", expected " + trackIndex);
+                        if (extractor.sampleTrackIndex != trackIndex) {
+                            Log.w(
+                                TAG, "WEIRD: got sample from track " +
+                                        extractor.sampleTrackIndex + ", expected " + trackIndex
+                            )
                         }
-                        long presentationTimeUs = extractor.getSampleTime();
-                        decoder.queueInputBuffer(inputBufIndex, 0, chunkSize,
-                                presentationTimeUs, 0 /*flags*/);
+                        val presentationTimeUs = extractor.sampleTime
+                        decoder.queueInputBuffer(
+                            inputBufIndex, 0, chunkSize,
+                            presentationTimeUs, 0 /*flags*/
+                        )
                         if (VERBOSE) {
-                            Log.d(TAG, "submitted frame " + inputChunk + " to dec, size=" +
-                                    chunkSize);
+                            Log.d(
+                                TAG, "submitted frame " + inputChunk + " to dec, size=" +
+                                        chunkSize
+                            )
                         }
-                        inputChunk++;
+                        inputChunk++
                         //向前推进下次读取数据的位置
-                        extractor.advance();
+                        extractor.advance()
                     }
                 } else {
-                    if (VERBOSE) Log.d(TAG, "input buffer not available");
+                    if (VERBOSE) Log.d(TAG, "input buffer not available")
                 }
             }
 
             //取一帧数据
             if (!outputDone) {
                 //从缓存队列中取出数据放入BufferInfo，根据decoderStatus的状态
-                int decoderStatus = decoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
+                val decoderStatus = decoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC.toLong())
                 if (decoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
                     // no output available yet
-                    if (VERBOSE) Log.d(TAG, "no output from decoder available");
+                    if (VERBOSE) Log.d(TAG, "no output from decoder available")
                 } else if (decoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
                     // not important for us, since we're using Surface
-                    if (VERBOSE) Log.d(TAG, "decoder output buffers changed");
+                    if (VERBOSE) Log.d(TAG, "decoder output buffers changed")
                 } else if (decoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    MediaFormat newFormat = decoder.getOutputFormat();
-                    if (VERBOSE) Log.d(TAG, "decoder output format changed: " + newFormat);
+                    val newFormat = decoder.outputFormat
+                    if (VERBOSE) Log.d(TAG, "decoder output format changed: $newFormat")
                 } else if (decoderStatus < 0) {
-                    throw new RuntimeException(
-                            "unexpected result from decoder.dequeueOutputBuffer: " +
-                                    decoderStatus);
+                    throw RuntimeException(
+                        "unexpected result from decoder.dequeueOutputBuffer: " +
+                                decoderStatus
+                    )
                 } else { // decoderStatus >= 0
-                    if (firstInputTimeNsec != 0) {
+                    if (firstInputTimeNsec != 0L) {
                         // Log the delay from the first buffer of input to the first buffer
                         // of output.
-                        long nowNsec = System.nanoTime();
-                        Log.d(TAG, "startup lag " + ((nowNsec - firstInputTimeNsec) / 1000000.0) + " ms");
-                        firstInputTimeNsec = 0;
+                        val nowNsec = System.nanoTime()
+                        Log.d(
+                            TAG,
+                            "startup lag " + (nowNsec - firstInputTimeNsec) / 1000000.0 + " ms"
+                        )
+                        firstInputTimeNsec = 0
                     }
-                    boolean doLoop = false;
-                    if (VERBOSE) Log.d(TAG, "surface decoder given buffer " + decoderStatus +
-                            " (size=" + mBufferInfo.size + ")");
-                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        if (VERBOSE) Log.d(TAG, "output EOS");
-                        if (null != mFrameCallback) mFrameCallback.postRender(true);
-                        if (mLoop) {
-                            doLoop = true;
-                        } else {
-                            outputDone = true;
-                        }
+                    if (VERBOSE) Log.d(
+                        TAG, "surface decoder given buffer " + decoderStatus +
+                                " (size=" + mBufferInfo.size + ")"
+                    )
+                    if (mBufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+                        if (VERBOSE) Log.d(TAG, "output EOS")
+                        mFrameCallback?.finishRender()
+                        outputDone = true
                     }
-
-                    boolean doRender = (mBufferInfo.size != 0);
+                    val doRender = mBufferInfo.size != 0
 
                     // As soon as we call releaseOutputBuffer, the buffer will be forwarded
                     // to SurfaceTexture to convert to a texture.  We can't control when it
                     // appears on-screen, but we can manage the pace at which we release
                     // the buffers.
                     if (doRender && frameCallback != null) {
-                        frameCallback.preRender(mBufferInfo.presentationTimeUs);
+                        frameCallback.preRender(mBufferInfo.presentationTimeUs)
                     }
                     //释放缓存区域，当设置了Surface则会调用Surface的渲染
-                    decoder.releaseOutputBuffer(decoderStatus, doRender);
+                    decoder.releaseOutputBuffer(decoderStatus, doRender)
                     if (doRender && frameCallback != null) {
-                        frameCallback.postRender(false);
-                    }
-
-                    if (doLoop) {
-                        Log.d(TAG, "Reached EOS, looping");
-                        extractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
-                        inputDone = false;
-                        decoder.flush();    // reset decoder state
-                        if (null != frameCallback) frameCallback.loopReset();
+                        frameCallback.postRender()
                     }
                 }
             }
@@ -435,21 +389,97 @@ public class MoviePlayer {
 
     /**
      * Thread helper for video playback.
-     * <p>
+     *
+     *
      * The PlayerFeedback callbacks will execute on the thread that creates the object,
      * assuming that thread has a looper.  Otherwise, they will execute on the main looper.
      */
-    public static class PlayTask implements Runnable {
-        private static final int MSG_PLAY_STOPPED = 0;
+    class PlayTask(private val mPlayer: VideoDecode, private val mFeedback: PlayerFeedback?) :
+        Runnable {
+        private var mDoLoop = false
+        private lateinit var mThread: Thread
+        private val mLocalHandler: LocalHandler
+        private val mStopLock = Object()
+        private var mStopped = false
 
-        private MoviePlayer mPlayer;
-        private PlayerFeedback mFeedback;
-        private boolean mDoLoop;
-        private Thread mThread;
-        private LocalHandler mLocalHandler;
+        /**
+         * Sets the loop mode.  If true, playback will loop forever.
+         */
+        fun setLoopMode(loopMode: Boolean) {
+            mDoLoop = loopMode
+        }
 
-        private final Object mStopLock = new Object();
-        private boolean mStopped = false;
+        /**
+         * Creates a new thread, and starts execution of the player.
+         */
+        fun execute() {
+            mPlayer.setLoopMode(mDoLoop)
+            mThread = Thread(this, "Movie Player")
+            mThread.start()
+        }
+
+        /**
+         * Requests that the player stop.
+         *
+         *
+         * Called from arbitrary thread.
+         */
+        fun requestStop() {
+            mPlayer.requestStop()
+        }
+
+        /**
+         * Wait for the player to stop.
+         *
+         *
+         * Called from any thread other than the PlayTask thread.
+         */
+        fun waitForStop() {
+            synchronized(mStopLock) {
+                while (!mStopped) {
+                    try {
+                        mStopLock.wait()
+                    } catch (ie: InterruptedException) {
+                        // discard
+                    }
+                }
+            }
+        }
+
+        override fun run() {
+            try {
+                mPlayer.play()
+            } catch (ioe: IOException) {
+                throw RuntimeException(ioe)
+            } finally {
+                // tell anybody waiting on us that we're done
+                synchronized(mStopLock) {
+                    mStopped = true
+                    mStopLock.notifyAll()
+                }
+
+                // Send message through Handler so it runs on the right thread.
+                mLocalHandler.sendMessage(
+                    mLocalHandler.obtainMessage(MSG_PLAY_STOPPED, mFeedback)
+                )
+            }
+        }
+
+        private class LocalHandler : Handler() {
+            override fun handleMessage(msg: Message) {
+                when (val what = msg.what) {
+                    MSG_PLAY_STOPPED -> {
+                        val fb = msg.obj as PlayerFeedback
+                        fb.playbackStopped()
+                    }
+                    else -> throw RuntimeException("Unknown msg $what")
+                }
+            }
+        }
+
+        companion object {
+            private const val MSG_PLAY_STOPPED = 0
+        }
 
         /**
          * Prepares new PlayTask.
@@ -457,88 +487,35 @@ public class MoviePlayer {
          * @param player   The player object, configured with control and output.
          * @param feedback UI feedback object.
          */
-        public PlayTask(MoviePlayer player, PlayerFeedback feedback) {
-            mPlayer = player;
-            mFeedback = feedback;
-
-            mLocalHandler = new LocalHandler();
-        }
-
-        /**
-         * Sets the loop mode.  If true, playback will loop forever.
-         */
-        public void setLoopMode(boolean loopMode) {
-            mDoLoop = loopMode;
-        }
-
-        /**
-         * Creates a new thread, and starts execution of the player.
-         */
-        public void execute() {
-            mPlayer.setLoopMode(mDoLoop);
-            mThread = new Thread(this, "Movie Player");
-            mThread.start();
-        }
-
-        /**
-         * Requests that the player stop.
-         * <p>
-         * Called from arbitrary thread.
-         */
-        public void requestStop() {
-            mPlayer.requestStop();
-        }
-
-        /**
-         * Wait for the player to stop.
-         * <p>
-         * Called from any thread other than the PlayTask thread.
-         */
-        public void waitForStop() {
-            synchronized (mStopLock) {
-                while (!mStopped) {
-                    try {
-                        mStopLock.wait();
-                    } catch (InterruptedException ie) {
-                        // discard
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void run() {
-            try {
-                mPlayer.play();
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            } finally {
-                // tell anybody waiting on us that we're done
-                synchronized (mStopLock) {
-                    mStopped = true;
-                    mStopLock.notifyAll();
-                }
-
-                // Send message through Handler so it runs on the right thread.
-                mLocalHandler.sendMessage(
-                        mLocalHandler.obtainMessage(MSG_PLAY_STOPPED, mFeedback));
-            }
-        }
-
-        private static class LocalHandler extends Handler {
-            @Override
-            public void handleMessage(Message msg) {
-                int what = msg.what;
-
-                switch (what) {
-                    case MSG_PLAY_STOPPED:
-                        PlayerFeedback fb = (PlayerFeedback) msg.obj;
-                        if (null != fb) fb.playbackStopped();
-                        break;
-                    default:
-                        throw new RuntimeException("Unknown msg " + what);
-                }
-            }
+        init {
+            mLocalHandler = LocalHandler()
         }
     }
+
+    companion object {
+        private const val TAG = "VideoDecode"
+        private const val VERBOSE = true
+
+        /**
+         * Selects the video track, if any.
+         *
+         * @return the track index, or -1 if no video track is found.
+         */
+        private fun selectTrack(extractor: MediaExtractor): Int {
+            // Select the first video track we find, ignore the rest.
+            val numTracks = extractor.trackCount
+            for (i in 0 until numTracks) {
+                val format = extractor.getTrackFormat(i)
+                val mime = format.getString(MediaFormat.KEY_MIME) ?: continue
+                if (mime.startsWith("video/")) {
+                    if (VERBOSE) {
+                        Log.d(TAG, "Extractor selected track $i ($mime): $format")
+                    }
+                    return i
+                }
+            }
+            return -1
+        }
+    }
+
 }

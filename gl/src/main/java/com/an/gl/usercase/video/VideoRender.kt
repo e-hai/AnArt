@@ -4,9 +4,7 @@ import android.content.Context
 import android.opengl.GLES31
 import android.opengl.GLSurfaceView
 import android.view.Surface
-import com.an.gl.R
 import com.an.gl.base.*
-import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.usercase.WatermarkDraw
 import com.an.gl.util.FileUtil
 import java.io.File
@@ -18,7 +16,7 @@ class VideoRender(private val context: Context) : GLSurfaceView.Renderer {
     private val videoFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
     private lateinit var mediaEglManager: MediaEglManager
     private lateinit var watermarkDraw: WatermarkDraw
-    private lateinit var moviePlayer: MoviePlayer
+    private lateinit var videoDecode: VideoDecode
 
     var callBack: CallBack? = null
 
@@ -57,18 +55,21 @@ class VideoRender(private val context: Context) : GLSurfaceView.Renderer {
 
 
     private fun initVideo(surface: Surface) {
-        moviePlayer = MoviePlayer(context,videoFile, surface, object : MoviePlayer.FrameCallback {
-            override fun preRender(presentationTimeUsec: Long) {
-            }
+        videoDecode = VideoDecode(
+            videoFile,
+            surface,
+            object : VideoDecode.FrameCallback {
+                override fun preRender(presentationTimeUsec: Long) {
+                }
 
-            override fun postRender(over: Boolean) {
-            }
+                override fun postRender() {
+                }
 
-            override fun loopReset() {
-            }
-        })
-        callBack?.onVideoSize(moviePlayer.videoWidth, moviePlayer.videoHeight)
-        MoviePlayer.PlayTask(moviePlayer, null).execute()
+                override fun finishRender() {
+                }
+            })
+        callBack?.onVideoSize(videoDecode.videoWidth, videoDecode.videoHeight)
+        VideoDecode.PlayTask(videoDecode, null).execute()
     }
 
     interface CallBack {

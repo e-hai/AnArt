@@ -1,19 +1,15 @@
 package com.an.gl.usercase.video
 
 import android.content.Context
-import android.net.Uri
 import android.opengl.GLES31
-import android.util.Log
 import android.view.Surface
 import com.an.gl.base.*
 import com.an.gl.base.egl.EglCore
-import com.an.gl.base.egl.EglCore.FLAG_TRY_GLES3
+import com.an.gl.base.egl.EglCore.Companion.FLAG_TRY_GLES3
 import com.an.gl.base.egl.EglSurfaceBase
 import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.usercase.WatermarkDraw
-import com.an.gl.util.GlUtil
 import java.io.File
-import java.lang.Exception
 import java.util.concurrent.TimeUnit
 
 
@@ -30,8 +26,8 @@ class VideoAddWatermarkManager(
         val FRAME_TIME = (1f / 30f * SECONDS_TO_NANOS).toLong()     //30帧每秒
     }
 
-    private lateinit var movieDecoder: MoviePlayer      //视频解码器
-    private lateinit var movieEncoder: VideoEncoderCore //视频编码器
+    private lateinit var movieDecoder: VideoDecode      //视频解码器
+    private lateinit var movieEncoder: VideoEncode //视频编码器
     private lateinit var eglManager: EglSurfaceBase     //EGL环境管理类
     private lateinit var mediaEglManager: MediaEglManager
     private lateinit var watermarkDraw: WatermarkDraw
@@ -46,24 +42,24 @@ class VideoAddWatermarkManager(
 
 
     private fun initVideo() {
-        movieDecoder = MoviePlayer(context, fromFile, null, object : MoviePlayer.FrameCallback {
-            override fun preRender(presentationTimeUsec: Long) {
+        movieDecoder = VideoDecode(
+            fromFile,
+            null,
+            object : VideoDecode.FrameCallback {
+                override fun preRender(presentationTimeUsec: Long) {
 
-            }
+                }
 
-            override fun postRender(over: Boolean) {
-                if (over) {
-                    drawFinish()
-                } else {
+                override fun postRender() {
                     onDrawFrame()
                 }
-            }
 
-            override fun loopReset() {
-            }
-        })
+                override fun finishRender() {
+                    drawFinish()
+                }
+            })
         val bitRate = movieDecoder.videoWidth * movieDecoder.videoHeight
-        movieEncoder = VideoEncoderCore(
+        movieEncoder = VideoEncode(
             movieDecoder.videoWidth,
             movieDecoder.videoHeight, bitRate, outFile
         )
