@@ -58,7 +58,7 @@ class VideoAddWatermarkManager(
                     drawFinish()
                 }
             })
-        val bitRate = movieDecoder.videoWidth * movieDecoder.videoHeight
+        val bitRate = movieDecoder.videoWidth * movieDecoder.videoHeight*3
         movieEncoder = VideoEncode(
             movieDecoder.videoWidth,
             movieDecoder.videoHeight, bitRate, outFile
