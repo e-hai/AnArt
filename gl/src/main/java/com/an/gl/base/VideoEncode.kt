@@ -30,29 +30,34 @@ import java.lang.RuntimeException
 /**
  * 视频编码器
  */
-class VideoEncode(width: Int, height: Int, frameRate: Int, outputFile: File) {
+class VideoEncode(
+    private val originalWidth: Int,
+    private val originalHeight: Int,
+    private val originalFrameRate: Int,
+    outputFile: File
+) {
     /**
      * Returns the encoder's input surface.
      */
-    val inputSurface: Surface
     private var mMuxer: MediaMuxer
     private var mEncoder: MediaCodec
     private val mBufferInfo: MediaCodec.BufferInfo
     private var mTrackIndex: Int
     private var mMuxerStarted: Boolean
     private var bitRate = 0
-    var mFrameRate = FRAME_RATE
-    var mWidth = width
-    var mHeight = height
+    val inputSurface: Surface
+    var frameRate: Int = 0
+    var width: Int = 0
+    var height: Int = 0
 
 
     /**
      * Configures encoder and muxer state, and prepares the input Surface.
      */
     init {
-        setPrefaceInfo(frameRate, width.toFloat(), height.toFloat())
+        initPrefaceInfo()
         mBufferInfo = MediaCodec.BufferInfo()
-        val format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight)
+        val format = MediaFormat.createVideoFormat(MIME_TYPE, width, height)
         // Set some properties.  Failing to specify some of these can cause the MediaCodec
         // configure() call to throw an unhelpful exception.
         format.setInteger(
@@ -86,15 +91,19 @@ class VideoEncode(width: Int, height: Int, frameRate: Int, outputFile: File) {
     }
 
 
-    private fun setPrefaceInfo(frameRate: Int, width: Float, height: Float) {
+    private fun initPrefaceInfo() {
+        width = originalWidth
+        height = originalHeight
+        frameRate = originalFrameRate
+
         val inShort: Float
         val inLong: Float
-        if (width > height) {
-            inShort = height
-            inLong = width
+        if (originalWidth > originalHeight) {
+            inShort = originalHeight.toFloat()
+            inLong = originalWidth.toFloat()
         } else {
-            inShort = width
-            inLong = height
+            inShort = originalWidth.toFloat()
+            inLong = originalHeight.toFloat()
         }
 
         val numCodecs = MediaCodecList.getCodecCount()
@@ -108,18 +117,18 @@ class VideoEncode(width: Int, height: Int, frameRate: Int, outputFile: File) {
                 if (type.equals(MIME_TYPE, ignoreCase = true)) {
                     val capabilities = codecInfo.getCapabilitiesForType(MIME_TYPE)
                     val supportFrameRate = capabilities.videoCapabilities.supportedFrameRates
-                    mFrameRate = when {
-                        frameRate > supportFrameRate.upper -> {
+                    frameRate = when {
+                        originalFrameRate > supportFrameRate.upper -> {
                             supportFrameRate.upper
                         }
-                        frameRate < supportFrameRate.lower -> {
+                        originalFrameRate < supportFrameRate.lower -> {
                             supportFrameRate.lower
                         }
                         else -> {
-                            frameRate
+                            originalFrameRate
                         }
                     }
-                    Log.d(TAG, "FrameRate=$mFrameRate")
+                    Log.d(TAG, "FrameRate=$frameRate")
 
                     val supportMaxW = capabilities.videoCapabilities.supportedWidths.upper.toFloat()
                     val supportMaxH =
@@ -144,17 +153,17 @@ class VideoEncode(width: Int, height: Int, frameRate: Int, outputFile: File) {
                         Log.d(TAG, "2")
                     }
 
-                    Log.d(TAG, "start width=$mWidth height=$mHeight")
+                    Log.d(TAG, "start width=$width height=$height")
                     Log.d(TAG, "scale=$scale")
-                    mWidth = (width / scale).toInt()
-                    mHeight = (height / scale).toInt()
-                    Log.d(TAG, "end width=$mWidth height=$mHeight")
-                    return
+                    width = (originalWidth / scale).toInt()
+                    height = (originalHeight / scale).toInt()
+                    Log.d(TAG, "end width=$width height=$height")
+                    break
                 }
             }
         }
 
-        bitRate = (mFrameRate * mWidth * mHeight)
+        bitRate = (frameRate * width * height)
     }
 
     /**

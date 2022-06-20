@@ -26,7 +26,7 @@ class VideoAddWatermarkManager(
     }
 
     private lateinit var movieDecoder: VideoDecode      //视频解码器
-    private lateinit var movieEncoder: VideoEncode //视频编码器
+    private lateinit var movieEncoder: VideoEncode      //视频编码器
     private lateinit var eglManager: EglSurfaceBase     //EGL环境管理类
     private lateinit var mediaEglManager: MediaEglManager
     private lateinit var watermarkDraw: WatermarkDraw
@@ -64,9 +64,9 @@ class VideoAddWatermarkManager(
             movieDecoder.frameRate,
             outFile
         )
-        width = movieEncoder.mWidth
-        height = movieEncoder.mHeight
-        frameTime = (1f / movieEncoder.mFrameRate * SECONDS_TO_NANOS).toLong()
+        width = movieEncoder.width
+        height = movieEncoder.height
+        frameTime = (1f / movieEncoder.frameRate * SECONDS_TO_NANOS).toLong()
     }
 
 
