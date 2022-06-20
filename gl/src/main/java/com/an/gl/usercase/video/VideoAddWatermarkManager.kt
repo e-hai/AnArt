@@ -23,7 +23,6 @@ class VideoAddWatermarkManager(
     companion object {
         const val TAG = "VideoAddWatermark"
         val SECONDS_TO_NANOS = TimeUnit.SECONDS.toNanos(1)  //一秒的纳秒长度
-        val FRAME_TIME = (1f / 30f * SECONDS_TO_NANOS).toLong()     //30帧每秒
     }
 
     private lateinit var movieDecoder: VideoDecode      //视频解码器
@@ -34,6 +33,7 @@ class VideoAddWatermarkManager(
     private var width: Int = 0
     private var height: Int = 0
     private var presentationTime: Long = 0
+    private var frameTime = (1f / 30 * SECONDS_TO_NANOS).toLong()
 
     init {
         initVideo()
@@ -58,13 +58,15 @@ class VideoAddWatermarkManager(
                     drawFinish()
                 }
             })
-        val bitRate = movieDecoder.videoWidth * movieDecoder.videoHeight*3
         movieEncoder = VideoEncode(
             movieDecoder.videoWidth,
-            movieDecoder.videoHeight, bitRate, outFile
+            movieDecoder.videoHeight,
+            movieDecoder.frameRate,
+            outFile
         )
-        width = movieEncoder.mWidth.toInt()
-        height = movieEncoder.mHeight.toInt()
+        width = movieEncoder.mWidth
+        height = movieEncoder.mHeight
+        frameTime = (1f / movieEncoder.mFrameRate * SECONDS_TO_NANOS).toLong()
     }
 
 
@@ -121,7 +123,7 @@ class VideoAddWatermarkManager(
         //给当前帧设置时间戳，解决给编码器设置帧数无效的问题
         eglManager.setPresentationTime(presentationTime)
         watermarkDraw.setPresentationTime(presentationTime / SECONDS_TO_NANOS)
-        presentationTime += FRAME_TIME
+        presentationTime += frameTime
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
             watermarkDraw.onDraw()
