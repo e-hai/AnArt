@@ -161,7 +161,6 @@ class VideoDecode(
      * Does not return until video playback is complete, or we get a "stop" signal from
      * frameCallback.
      */
-    @Throws(IOException::class)
     fun play() {
         var extractor: MediaExtractor? = null
         var decoder: MediaCodec? = null
@@ -272,7 +271,7 @@ class VideoDecode(
         var firstInputTimeNsec: Long = -1
         var outputDone = false
         var inputDone = false
-        while (!outputDone) {
+         while (!outputDone) {
             if (VERBOSE) Log.d(TAG, "loop")
             if (mIsStopRequested) {
                 Log.d(TAG, "Stop requested")

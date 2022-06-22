@@ -154,7 +154,7 @@ open class SimpleDraw(val texture: Texture) : Draw {
         texture.bindTexture()
 
         //绑定的纹理，关联到着色器的纹理属性上
-        GLES31.glUniform1i(textureHandle, GLES31.GL_TEXTURE0)
+        GLES31.glUniform1i(textureHandle, 0)
 
         //按照绘制数据来绘制顶点
         GLES31.glDrawElements(

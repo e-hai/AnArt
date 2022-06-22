@@ -133,6 +133,9 @@ class VideoEncode(
                     val supportMaxW = capabilities.videoCapabilities.supportedWidths.upper.toFloat()
                     val supportMaxH =
                         capabilities.videoCapabilities.supportedHeights.upper.toFloat()
+
+                    Log.d(TAG, "supportMaxW=$supportMaxW supportMaxH=$supportMaxH")
+
                     val supportShort: Float
                     val supportLong: Float
                     if (supportMaxW > supportMaxH) {

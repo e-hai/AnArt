@@ -13,6 +13,7 @@ import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.util.FileUtil
 import com.an.gl.usercase.video.VideoAddWatermarkManager
 import java.io.File
+import java.lang.Exception
 
 class VideoFragment : Fragment() {
 
@@ -29,18 +30,22 @@ class VideoFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Thread {
-            val context = context ?: return@Thread
-            val fromFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
-            val outFile: File =
-                FileManager.specificStorage(App.application).createMovie("temp.mp4").toFile()
-          Log.d("videoFragment", outFile.absolutePath)
-            VideoAddWatermarkManager(
-                context,
-                fromFile,
-                outFile,
-                WatermarkConfig(R.drawable.watermark)
-            ).start()
-            FileManager.sharedStorage(App.application).saveMovie("666", outFile.inputStream())
+            try {
+                val context = context ?: return@Thread
+                val fromFile: File = FileUtil.createFileByAssets(context, "test.mp4", "123.mp4")
+                val outFile: File =
+                    FileManager.specificStorage(App.application).createMovie("temp.mp4").toFile()
+                Log.d("videoFragment", outFile.absolutePath)
+                VideoAddWatermarkManager(
+                    context,
+                    fromFile,
+                    outFile,
+                    WatermarkConfig(R.drawable.watermark)
+                ).start()
+                FileManager.sharedStorage(App.application).saveMovie("666", outFile.inputStream())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }.start()
     }
 }
