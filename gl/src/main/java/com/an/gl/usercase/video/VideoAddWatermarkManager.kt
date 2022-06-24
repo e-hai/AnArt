@@ -3,10 +3,13 @@ package com.an.gl.usercase.video
 import android.content.Context
 import android.opengl.GLES31
 import android.view.Surface
+import com.an.gl.R
 import com.an.gl.base.*
 import com.an.gl.base.egl.EglCore
 import com.an.gl.base.egl.EglCore.Companion.FLAG_TRY_GLES3
 import com.an.gl.base.egl.EglSurfaceBase
+import com.an.gl.usercase.MaskConfig
+import com.an.gl.usercase.MaskDraw
 import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.usercase.WatermarkDraw
 import java.io.File
@@ -17,7 +20,7 @@ class VideoAddWatermarkManager(
     val context: Context,
     private val fromFile: File,
     private val outFile: File,
-    private val config: WatermarkConfig
+    private val watermarkConfig: WatermarkConfig
 ) {
 
     companion object {
@@ -30,6 +33,9 @@ class VideoAddWatermarkManager(
     private lateinit var eglManager: EglSurfaceBase     //EGL环境管理类
     private lateinit var mediaEglManager: MediaEglManager
     private lateinit var watermarkDraw: WatermarkDraw
+    private lateinit var topMaskDraw: MaskDraw
+    private lateinit var bottomMaskDraw: MaskDraw
+
     private var width: Int = 0
     private var height: Int = 0
     private var presentationTime: Long = 0
@@ -97,7 +103,14 @@ class VideoAddWatermarkManager(
         mediaEglManager = MediaEglManager().apply {
             bindSourceSurface(surface)
         }
-        watermarkDraw = WatermarkDraw(context, config)
+        watermarkDraw = WatermarkDraw(context, watermarkConfig)
+        topMaskDraw = MaskDraw(context,
+            MaskConfig(R.drawable.mask_top, height = 80)
+        )
+        bottomMaskDraw = MaskDraw(
+            context,
+            MaskConfig(R.drawable.mask_bottom, MaskConfig.Direction.BOTTOM, height = 80)
+        )
     }
 
 
@@ -114,7 +127,10 @@ class VideoAddWatermarkManager(
     private fun onSurfaceChanged(width: Int, height: Int) {
         mediaEglManager.onSizeChange(width, height)
         watermarkDraw.onSizeChange(width, height)
+        topMaskDraw.onSizeChange(width, height)
+        bottomMaskDraw.onSizeChange(width, height)
     }
+
 
     /**
      * 绘制
@@ -126,6 +142,8 @@ class VideoAddWatermarkManager(
         presentationTime += frameTime
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
+            topMaskDraw.onDraw()
+            bottomMaskDraw.onDraw()
             watermarkDraw.onDraw()
         }
         eglManager.swapBuffers()

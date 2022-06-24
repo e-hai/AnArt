@@ -46,8 +46,8 @@ class WatermarkDraw(
             config.switchingTime,
             width,
             height,
-            watermarkBitmap.width,
-            watermarkBitmap.height,
+            140,
+            40,
             config.margin
         )
     }

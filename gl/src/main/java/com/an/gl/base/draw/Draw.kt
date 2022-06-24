@@ -7,11 +7,6 @@ package com.an.gl.base.draw
 interface Draw {
 
     /**
-     * 初始化坐标数据（顶点坐标、纹理坐标）
-     * **/
-    fun initCoordinateData()
-
-    /**
      * 获取顶点着色器代码
      * **/
     fun getVertexShadeCode(): String
@@ -20,6 +15,11 @@ interface Draw {
      * 获取片元着色器代码
      * **/
     fun getFragmentShadeCode(): String
+
+    /**
+     * 初始化坐标数据（顶点坐标、纹理坐标）
+     * **/
+    fun initCoordinateData()
 
     /**
      * 初始化着色器程序

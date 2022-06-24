@@ -27,6 +27,7 @@ class MediaEglManager {
     private val fboManager: FrameBufferObjectManager = FrameBufferObjectManager()
     private val screenDraw: SimpleDraw = SimpleDraw(fboManager.getTexture())
 
+
     fun setOnFrameAvailableListener(listener: SurfaceTexture.OnFrameAvailableListener) {
         surfaceTexture.setOnFrameAvailableListener(listener)
     }
