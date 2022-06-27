@@ -105,11 +105,11 @@ class VideoAddWatermarkManager(
         }
         watermarkDraw = WatermarkDraw(context, watermarkConfig)
         topMaskDraw = MaskDraw(context,
-            MaskConfig(R.drawable.mask_top, height = 80)
+            MaskConfig(R.drawable.mask_top, height = 72)
         )
         bottomMaskDraw = MaskDraw(
             context,
-            MaskConfig(R.drawable.mask_bottom, MaskConfig.Direction.BOTTOM, height = 80)
+            MaskConfig(R.drawable.mask_bottom, MaskConfig.Direction.BOTTOM, height = 72)
         )
     }
 
@@ -142,8 +142,8 @@ class VideoAddWatermarkManager(
         presentationTime += frameTime
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT)
         mediaEglManager.onDraw {
-            topMaskDraw.onDraw()
             bottomMaskDraw.onDraw()
+            topMaskDraw.onDraw()
             watermarkDraw.onDraw()
         }
         eglManager.swapBuffers()

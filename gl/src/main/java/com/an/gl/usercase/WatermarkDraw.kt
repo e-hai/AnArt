@@ -46,8 +46,8 @@ class WatermarkDraw(
             config.switchingTime,
             width,
             height,
-            140,
-            40,
+            210,
+            60,
             config.margin
         )
     }
@@ -161,13 +161,9 @@ class Location(
     }
 
     private fun initSize() {
-        val scale = if (screenWidth > screenHeight) {
-            screenWidth.toFloat() / UI_PX_LONG
-        } else {
-            screenWidth.toFloat() / UI_PX_SHORT
-        }
-        viewportWidth = (watermarkWidth * scale).toInt()
-        viewportHeight = (watermarkHeight * scale).toInt()
+        val scale = 1
+        viewportWidth = (watermarkWidth * scale)
+        viewportHeight = (watermarkHeight * scale)
         Log.d(
             TAG,
             "screenWidth=$screenWidth screenHeight=$screenHeight "
