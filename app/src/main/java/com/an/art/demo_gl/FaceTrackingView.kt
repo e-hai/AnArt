@@ -1,4 +1,4 @@
-package com.an.art
+package com.an.art.demo_gl
 
 import android.content.Context
 import android.graphics.Canvas

@@ -1,4 +1,4 @@
-package com.an.art
+package com.an.art.demo_gl
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -14,6 +14,9 @@ import android.view.ViewGroup
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import com.an.art.MainActivity
+import com.an.art.PermissionListener
+import com.an.art.PermissionsFragment
 import com.an.art.databinding.FragmentCameraBinding
 import com.an.gl.usercase.camera.CameraView
 import com.google.mlkit.vision.common.InputImage

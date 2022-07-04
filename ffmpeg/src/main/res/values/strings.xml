@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ffmpeg</string>
+    <string name="video_shoot_max_tip">拖动选择你要发表的%d秒以内片段！</string>
+    <string name="video_shoot_min_tip">视频长不足%d秒,无法上传！</string>
+    <string name="video_cancel">取消</string>
+    <string name="video_finish">完成</string>
+
+</resources>

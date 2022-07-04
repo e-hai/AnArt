@@ -1,4 +1,4 @@
-package com.an.art
+package com.an.art.demo_gl
 
 import android.os.Bundle
 import android.util.Log
@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toFile
+import com.an.art.App
+import com.an.art.R
 import com.an.art.databinding.FragmentVideoBinding
 import com.an.file.FileManager
 import com.an.gl.usercase.WatermarkConfig
