@@ -71,15 +71,15 @@ class CameraFragment : Fragment() {
 
     private fun initCamera() {
         val context = context ?: return
-        ProcessCameraProvider.getInstance(context).apply {
-            addListener(
-                {
-                    val cameraProvider = get() ?: return@addListener
-                    bindPreview(binding.previewView, cameraProvider)
-                },
-                cameraExecutor
-            )
-        }
+//        ProcessCameraProvider.getInstance(context).apply {
+//            addListener(
+//                {
+//                    val cameraProvider = get() ?: return@addListener
+//                    bindPreview(binding.previewView, cameraProvider)
+//                },
+//                cameraExecutor
+//            )
+//        }
 
     }
 

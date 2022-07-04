@@ -101,7 +101,4 @@ public class Utils {
         return retStr;
     }
 
-    public static String getCacheDir() {
-        return context.getFilesDir().getAbsolutePath();
-    }
 }

@@ -6,6 +6,8 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
+
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -53,12 +55,31 @@ public class VideoTrimmerUtil {
             FFmpeg.getInstance(context).execute(command, new ExecuteBinaryResponseHandler() {
 
                 @Override
+                public void onFailure(String message) {
+                    Log.d(TAG,"onFailure="+message);
+                }
+
+                @Override
+                public void onFinish() {
+                    Log.d(TAG,"onFinish");
+                }
+
+                @Override
+                public void onProgress(String message) {
+                    Log.d(TAG,"onProgress");
+                }
+
+                @Override
                 public void onSuccess(String s) {
+                    Log.d(TAG,"onSuccess");
                     callback.onFinishTrim(tempOutFile);
+
                 }
 
                 @Override
                 public void onStart() {
+                    Log.d(TAG,"onStart");
+
                     callback.onStartTrim();
                 }
             });
@@ -67,14 +88,14 @@ public class VideoTrimmerUtil {
         }
     }
 
-    public static void shootVideoThumbInBackground(final Context context, final Uri videoUri, final int totalThumbsCount, final long startPosition,
+    public static void shootVideoThumbInBackground(final Context context, final File videoUri, final int totalThumbsCount, final long startPosition,
                                                    final long endPosition, final SingleCallback<Bitmap, Integer> callback) {
         BackgroundExecutor.execute(new BackgroundExecutor.Task("", 0L, "") {
             @Override
             public void execute() {
                 try {
                     MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-                    mediaMetadataRetriever.setDataSource(context, videoUri);
+                    mediaMetadataRetriever.setDataSource(context, Uri.fromFile(videoUri));
                     // Retrieve media data use microsecond
                     long interval = (endPosition - startPosition) / (totalThumbsCount - 1);
                     Log.d(TAG, "interval=" + interval

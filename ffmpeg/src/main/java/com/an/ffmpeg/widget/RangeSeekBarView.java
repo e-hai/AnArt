@@ -45,7 +45,7 @@ public class RangeSeekBarView extends View {
      * 最大可截取区域-对应UI的内部显示区域，其他元素均需要以此为基准调整位置
      **/
     private Paint maxRangePaint;    //画笔-绘制最大截取区域边框
-    private RectF maxRangeRect;     //最大可截取区域
+    private RectF maxRangeRect = new RectF();     //最大可截取区域
     private final int maxRangeMarginStartEnd = Utils.dpToPx(38); //左右与view边界的距离
     private final int maxRangeMarginTopBottom = Utils.dpToPx(4); //上下与view边界的距离
     private final float maxRangeRound = Utils.dpToPx(4);
@@ -55,7 +55,7 @@ public class RangeSeekBarView extends View {
      * 已选中的截取区域
      **/
     private Paint selectRangePaint;  //画笔-绘制已选中的截取区域边框
-    private RectF selectRangeRect;   //已选中的截取区域
+    private RectF selectRangeRect = new RectF();   //已选中的截取区域
     private final int borderSize = Utils.dpToPx(4);
 
     /**
@@ -519,6 +519,15 @@ public class RangeSeekBarView extends View {
      **/
     void setStartTimeInVideo(long time) {
         startTime = time;
+        resetProgress();
+        if (mRangeSeekBarChangeListener != null) {
+            mRangeSeekBarChangeListener.onRangeSeekBarChanged(
+                    getSelectedLeftTimeInVideo(),
+                    getSelectedRightTimeInVideo(),
+                    MotionEvent.ACTION_MOVE,
+                    Thumb.MIN
+            );
+        }
     }
 
 
@@ -542,7 +551,7 @@ public class RangeSeekBarView extends View {
      * 指视频时间
      * 已选多少秒时间
      **/
-    private long getSelectTime() {
+    long getSelectTime() {
         return getSelectedRightTimeInVideo() - getSelectedLeftTimeInVideo();
     }
 
@@ -594,7 +603,6 @@ public class RangeSeekBarView extends View {
         float end = 1;
         long duration = (long) ((getSelectTime() - getSelectTime() * progress) * 1000); //毫秒
         Log.d(TAG, "start=" + start + " duration=" + duration);
-
         progressAnimator = ValueAnimator.ofFloat(start, end).setDuration(duration);
         progressAnimator.setInterpolator(new LinearInterpolator());
         progressAnimator.addUpdateListener(animation -> {

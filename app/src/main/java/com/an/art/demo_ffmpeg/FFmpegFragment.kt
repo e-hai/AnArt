@@ -8,8 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.an.art.databinding.FragmentFfmpegBinding
+import com.an.art.demo_ffmpeg.FFmpegActivity.Companion.VIDEO_FILE_KEY
 import com.an.art.demo_ffmpeg.FFmpegActivity.Companion.VIDEO_URI_KEY
 import com.an.ffmpeg.widget.VideoTrimListener
+import java.io.File
 
 class FFmpegFragment : Fragment() {
     private lateinit var binding: FragmentFfmpegBinding
@@ -24,9 +26,12 @@ class FFmpegFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setVideUri(activity?.intent?.getParcelableExtra(VIDEO_URI_KEY))
+        setVideUri(
+            activity?.intent?.getSerializableExtra(VIDEO_URI_KEY) as File,
+            activity?.intent?.getSerializableExtra(VIDEO_FILE_KEY) as File
+        )
 
-        binding.trimmerView.setOnTrimVideoListener(object : VideoTrimListener{
+        binding.trimmerView.setOnTrimVideoListener(object : VideoTrimListener {
             override fun onStartTrim() {
                 Log.d("owow", "onStartTrim")
 
@@ -37,14 +42,15 @@ class FFmpegFragment : Fragment() {
 
             }
 
+
             override fun onCancel() {
                 Log.d("owow", "onCancel")
             }
         })
     }
 
-    private fun setVideUri(uri: Uri?) {
-        Log.d("owow", "ff=$uri")
-        binding.trimmerView.initVideoByURI(uri)
+    private fun setVideUri(inFile: File, outFile: File) {
+        Log.d("owow", "inFile=${inFile.absolutePath}  outFile=${outFile.absolutePath}")
+        binding.trimmerView.initVideoByURI(inFile, outFile)
     }
 }

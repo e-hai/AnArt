@@ -5,6 +5,8 @@ import static com.an.ffmpeg.widget.VideoTrimmerUtil.MAX_SHOOT_DURATION_SECONDS;
 import static com.an.ffmpeg.widget.VideoTrimmerUtil.MIN_SHOOT_DURATION_SECONDS;
 import static com.an.ffmpeg.widget.VideoTrimmerUtil.RECYCLER_VIEW_PADDING;
 import static com.an.ffmpeg.widget.VideoTrimmerUtil.THUMBNAIL_SIZE;
+import static com.google.android.exoplayer2.Player.STATE_ENDED;
+import static com.google.android.exoplayer2.Player.STATE_READY;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -30,24 +32,35 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.an.ffmpeg.R;
+import com.an.file.FileManager;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
+
+import java.io.File;
 
 public class VideoTrimmerView extends FrameLayout {
 
     private static final String TAG = VideoTrimmerView.class.getSimpleName();
 
+    private ExoPlayer exoPlayer;
     private Context mContext;
-    private RelativeLayout mLinearVideo;
-    private VideoView mVideoView;
+    private StyledPlayerView mVideoView;
     private ImageView mPlayView;
     private RecyclerView mVideoThumbRecyclerView;
     private RangeSeekBarView mRangeSeekBarView; //裁剪选择框
     private LinearLayout mSeekBarLayout;
     private TextView selectTimeView;
-    private Uri mSourceUri;
+    private File inFile;
+    private File outFile;
     private int mDuration = 0; //视频总时长
     private VideoTrimListener mOnTrimVideoListener;
     private VideoTrimmerAdapter mVideoThumbAdapter;
-    private int lastScrollX;
     private int mThumbsTotalCount;
 
     private final int scaledTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
@@ -64,8 +77,6 @@ public class VideoTrimmerView extends FrameLayout {
     private void init(Context context) {
         this.mContext = context;
         LayoutInflater.from(context).inflate(R.layout.video_trimmer_view, this, true);
-
-        mLinearVideo = findViewById(R.id.layout_surface_view);
         mVideoView = findViewById(R.id.video_loader);
         mPlayView = findViewById(R.id.icon_video_play);
         mSeekBarLayout = findViewById(R.id.seekBarLayout);
@@ -78,15 +89,81 @@ public class VideoTrimmerView extends FrameLayout {
         initListeners();
     }
 
+
     private void initListeners() {
         findViewById(R.id.cancelBtn).setOnClickListener(view -> onCancelClicked());
         findViewById(R.id.finishBtn).setOnClickListener(view -> onSaveClicked());
-        mVideoView.setOnPreparedListener(mp -> {
-            mp.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT);
-            videoPrepared(mp);
+        mPlayView.setOnClickListener(v -> videoPlayOrPause());
+    }
+
+    private void onCancelClicked() {
+        mOnTrimVideoListener.onCancel();
+    }
+
+
+    public void setOnTrimVideoListener(VideoTrimListener onTrimVideoListener) {
+        mOnTrimVideoListener = onTrimVideoListener;
+    }
+
+
+    private void onSaveClicked() {
+        if (mRangeSeekBarView.getSelectTime() < MIN_SHOOT_DURATION_SECONDS) {
+            Toast.makeText(mContext, getResources().getString(R.string.video_shoot_min_tip), Toast.LENGTH_SHORT).show();
+        } else {
+            videoStop();
+            VideoTrimmerUtil.trim(mContext,
+                    inFile.getPath(),
+                    getContext().getFilesDir().getAbsolutePath(),
+                    mRangeSeekBarView.getSelectedLeftTimeInVideo() * 1000,
+                    mRangeSeekBarView.getSelectedRightTimeInVideo() * 1000,
+                    mOnTrimVideoListener);
+        }
+    }
+
+
+    public void initVideoByURI(final File inFile, final File outFile) {
+        this.inFile = inFile;
+        this.outFile = outFile;
+        exoPlayer = new ExoPlayer
+                .Builder(getContext())
+                .build();
+        exoPlayer.addMediaSource(createMediaSource(getContext(), inFile.getAbsolutePath()));
+        exoPlayer.addListener(new Player.Listener() {
+            @Override
+            public void onPlaybackStateChanged(int playbackState) {
+                if (playbackState == STATE_READY) {
+                    Log.d(TAG, "STATE_READY=" + exoPlayer.getDuration() + " th=" + Thread.currentThread());
+                    videoPrepared(exoPlayer.getDuration());
+                } else if (playbackState == STATE_ENDED) {
+                    Log.d(TAG, "STATE_ENDED=" + exoPlayer.getDuration());
+                    videoCompleted();
+                }
+            }
+
+            @Override
+            public void onIsPlayingChanged(boolean isPlaying) {
+                Log.d(TAG, "onIsPlayingChanged=" + isPlaying);
+                setPlayPauseViewIcon(isPlaying);
+            }
         });
-        mVideoView.setOnCompletionListener(mp -> videoCompleted());
-        mPlayView.setOnClickListener(v -> playVideoOrPause());
+        mVideoView.requestFocus();
+        mVideoView.setPlayer(exoPlayer);
+        exoPlayer.prepare();
+    }
+
+    private MediaSource createMediaSource(Context context, String uri) {
+        DefaultDataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context.getApplicationContext());
+        MediaItem mediaItem = MediaItem.fromUri(uri);
+        return new ProgressiveMediaSource
+                .Factory(dataSourceFactory)
+                .createMediaSource(mediaItem);
+    }
+
+
+    private void videoPrepared(long videoDuration) {
+        Log.d(TAG, "videoDuration=" + videoDuration);
+        mDuration = (int) (videoDuration / 1000);
+        initRangeSeekBarView(mDuration);
     }
 
     /**
@@ -109,45 +186,14 @@ public class VideoTrimmerView extends FrameLayout {
         mRangeSeekBarView.setStartTimeInVideo(0);
         mRangeSeekBarView.setOnRangeSeekBarChangeListener(mOnRangeSeekBarChangeListener);
         mSeekBarLayout.addView(mRangeSeekBarView);
-    }
-
-    public void initVideoByURI(final Uri videoURI) {
-        mSourceUri = videoURI;
-        mVideoView.setVideoURI(videoURI);
-        mVideoView.requestFocus();
-    }
-
-    private void onCancelClicked() {
-        mOnTrimVideoListener.onCancel();
-    }
-
-    private void videoPrepared(MediaPlayer mp) {
-        ViewGroup.LayoutParams lp = mVideoView.getLayoutParams();
-        int videoWidth = mp.getVideoWidth();
-        int videoHeight = mp.getVideoHeight();
-
-        float videoProportion = (float) videoWidth / (float) videoHeight;
-        int screenWidth = mLinearVideo.getWidth();
-        int screenHeight = mLinearVideo.getHeight();
-
-        lp.width = screenWidth;
-        if (videoHeight > videoWidth) {
-            lp.height = screenHeight;
-        } else {
-            float r = videoHeight / (float) videoWidth;
-            lp.height = (int) (lp.width * r);
-        }
-        mVideoView.setLayoutParams(lp);
-        mDuration = mVideoView.getDuration() / 1000;
-        initRangeSeekBarView(mDuration);
-        startShootVideoThumbs(mContext, mSourceUri, mThumbsTotalCount, 0, mDuration);
+        startShootVideoThumbs(mContext, inFile, mThumbsTotalCount, 0, durationSeconds);
     }
 
     /**
      * 获取预览帧
      **/
-    private void startShootVideoThumbs(final Context context, final Uri videoUri, int totalThumbsCount, long startPosition, long endPosition) {
-        VideoTrimmerUtil.shootVideoThumbInBackground(context, videoUri, totalThumbsCount, startPosition, endPosition,
+    private void startShootVideoThumbs(final Context context, final File inFile, int totalThumbsCount, long startPosition, long endPosition) {
+        VideoTrimmerUtil.shootVideoThumbInBackground(context, inFile, totalThumbsCount, startPosition, endPosition,
                 (bitmap, interval) -> {
                     if (bitmap != null) {
                         UiThreadExecutor.runTask("", () -> mVideoThumbAdapter.addBitmaps(bitmap), 0L);
@@ -159,54 +205,45 @@ public class VideoTrimmerView extends FrameLayout {
         setPlayPauseViewIcon(false);
     }
 
-
-    private void playVideoOrPause() {
-        int videoCurrentPosition = mVideoView.getCurrentPosition();
-        if (mVideoView.isPlaying()) {
-            mVideoView.pause();
-            mRangeSeekBarView.pauseProgressAnimation();
-        } else {
-            mVideoView.start();
-            mRangeSeekBarView.playingProgressAnimation();
-        }
-        setPlayPauseViewIcon(mVideoView.isPlaying());
+    private void videoStart() {
+        exoPlayer.play();
     }
 
-
-    public void setOnTrimVideoListener(VideoTrimListener onTrimVideoListener) {
-        mOnTrimVideoListener = onTrimVideoListener;
+    private void videoStop() {
+        exoPlayer.pause();
     }
 
-
-    private void onSaveClicked() {
-        if (mRangeSeekBarView.getSelectedRightTimeInVideo() - mRangeSeekBarView.getSelectedLeftTimeInVideo() < MIN_SHOOT_DURATION_SECONDS) {
-            Toast.makeText(mContext, getResources().getString(R.string.video_shoot_min_tip), Toast.LENGTH_SHORT).show();
+    private void videoPlayOrPause() {
+        if (exoPlayer.isPlaying()) {
+            videoStop();
         } else {
-            mVideoView.pause();
-            VideoTrimmerUtil.trim(mContext,
-                    mSourceUri.getPath(),
-                    Utils.getCacheDir(),
-                    mRangeSeekBarView.getSelectedLeftTimeInVideo() * 1000,
-                    mRangeSeekBarView.getSelectedRightTimeInVideo() * 1000,
-                    mOnTrimVideoListener);
+            videoStart();
         }
     }
 
-    /**
-     * @param msec milliseconds
-     **/
-    private void seekTo(int msec) {
-        Log.d(TAG, "seekTo = " + msec);
-        mVideoView.seekTo(msec);
+
+    private void seekTo(int seconds) {
+        seconds = seconds * 1000;
+        Log.d(TAG, "seekTo = " + seconds);
+        exoPlayer.seekTo(seconds);
     }
 
     private void setPlayPauseViewIcon(boolean isPlaying) {
-        mPlayView.setImageResource(isPlaying ? R.drawable.pause : R.drawable.play);
+        mPlayView.setImageResource(isPlaying ? R.drawable.play : R.drawable.pause);
+        if (isPlaying) {
+            mPlayView.postDelayed(() -> mPlayView.setVisibility(GONE), 1000L);
+        } else {
+            mPlayView.setVisibility(VISIBLE);
+        }
     }
 
     private final RangeSeekBarView.OnRangeSeekBarChangeListener mOnRangeSeekBarChangeListener = (leftSelectTime, rightSelectTime, action, pressedThumb) -> {
         switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                videoStop();
+                break;
             case MotionEvent.ACTION_MOVE:
+                videoStop();
                 long position;
                 if (pressedThumb == RangeSeekBarView.Thumb.MIN) {
                     position = leftSelectTime;
@@ -218,6 +255,7 @@ public class VideoTrimmerView extends FrameLayout {
                 break;
             case MotionEvent.ACTION_UP:
                 seekTo((int) leftSelectTime);
+                videoStart();
                 break;
             default:
                 break;
@@ -239,7 +277,7 @@ public class VideoTrimmerView extends FrameLayout {
             super.onScrolled(recyclerView, dx, dy);
             int scrollX = calcScrollXDistance();
             //达不到滑动的距离
-            if (Math.abs(lastScrollX - scrollX) < scaledTouchSlop) {
+            if (Math.abs(scrollX) < scaledTouchSlop) {
                 return;
             }
             //一个预览帧占的时长
@@ -249,7 +287,6 @@ public class VideoTrimmerView extends FrameLayout {
             //移动的像素占的时长
             long scrollTimeSecond = (long) (scrollX * averagePxMs) / 1000;
             mRangeSeekBarView.setStartTimeInVideo(scrollTimeSecond);
-            lastScrollX = scrollX;
         }
     };
 
