@@ -501,6 +501,7 @@ public class RangeSeekBarView extends View {
      **/
     public void setMinRangeTime(long minRangeTime) {
         this.minRangeTime = minRangeTime;
+        Log.d(TAG, "minRangeTime=" + minRangeTime);
     }
 
     /**
@@ -510,6 +511,7 @@ public class RangeSeekBarView extends View {
      **/
     public void setMaxRangeTime(long maxRangeTime) {
         this.maxRangeTime = maxRangeTime;
+        Log.d(TAG, "maxRangeTime=" + maxRangeTime);
     }
 
     /**
@@ -535,16 +537,16 @@ public class RangeSeekBarView extends View {
      * 指视频时间
      * 已选区域所对应的视频时间 秒
      **/
-    long getSelectedLeftTimeInVideo() {
-        return (long) (startTime + (selectRangeRect.left / maxRangeRect.width()) * maxRangeTime);
+    int getSelectedLeftTimeInVideo() {
+        return (int) (startTime + (selectRangeRect.left / maxRangeRect.width()) * maxRangeTime);
     }
 
     /**
      * 指视频时间
      * 已选区域所对应的视频时间 秒
      **/
-    long getSelectedRightTimeInVideo() {
-        return (long) (startTime + (selectRangeRect.right / maxRangeRect.width()) * maxRangeTime);
+    int getSelectedRightTimeInVideo() {
+        return (int) (startTime + (selectRangeRect.right / maxRangeRect.width()) * maxRangeTime);
     }
 
     /**
@@ -614,6 +616,14 @@ public class RangeSeekBarView extends View {
             @Override
             public void onAnimationEnd(Animator animation) {
                 resetProgress();
+                if (mRangeSeekBarChangeListener != null) {
+                    mRangeSeekBarChangeListener.onRangeSeekBarChanged(
+                            getSelectedLeftTimeInVideo(),
+                            getSelectedRightTimeInVideo(),
+                            MotionEvent.ACTION_CANCEL,
+                            Thumb.MIN
+                    );
+                }
                 Log.d(TAG, "onAnimationEnd=" + progress);
             }
         });

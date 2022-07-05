@@ -7,85 +7,48 @@ import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
+import com.an.ffmpeg.code.VideoFFCrop;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import nl.bravobit.ffmpeg.ExecuteBinaryResponseHandler;
-import nl.bravobit.ffmpeg.FFmpeg;
 
 public class VideoTrimmerUtil {
 
     private static final String TAG = VideoTrimmerUtil.class.getSimpleName();
     public static final long MIN_SHOOT_DURATION_SECONDS = 3;     // 最小剪辑时间3s
     public static final long MAX_SHOOT_DURATION_SECONDS = 15;    // 最小剪辑时间15s
-    public static final int MAX_COUNT_RANGE = 10;        //seekBar的区域内一共有多少张图片
+    public static final int MAX_COUNT_RANGE = 4;        //seekBar的区域内一共有多少张图片
     public static final int THUMBNAIL_SIZE = Utils.dpToPx(72);//一张图片的宽、高
     public static final int RECYCLER_VIEW_PADDING = Utils.dpToPx(36);
 
-    public static void trim(Context context, String inputFile, String outputFile, long startMs, long endMs, final VideoTrimListener callback) {
+    public static void trim(Context context, String srcVideo, String destPath, long startMs, long endMs, final VideoTrimListener callback) {
         final String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         final String outputName = "trimmedVideo_" + timeStamp + ".mp4";
-        outputFile = outputFile + "/" + outputName;
+        destPath = destPath + "/" + outputName;
+        long duration = endMs - startMs;
+        VideoFFCrop.Companion.getInstance().cropVideo(context, srcVideo, destPath, (int) startMs/1000, (int) duration/1000, new VideoFFCrop.FFListener() {
+            @Override
+            public void onFail(@Nullable String msg) {
+                Log.d(TAG, "onFail");
+            }
 
-        String start = convertSecondsToTime(startMs / 1000);
-        String duration = convertSecondsToTime((endMs - startMs) / 1000);
+            @Override
+            public void onFinish() {
+                Log.d(TAG, "onFinish");
 
-        /** 裁剪视频ffmpeg指令说明：
-         * ffmpeg -ss START -t DURATION -i INPUT -codec copy -avoid_negative_ts 1 OUTPUT
-         -ss 开始时间，如： 00:00:20，表示从20秒开始；
-         -t 时长，如： 00:00:10，表示截取10秒长的视频；
-         -i 输入，后面是空格，紧跟着就是输入视频文件；
-         -codec copy -avoid_negative_ts 1 表示所要使用的视频和音频的编码格式，这里指定为copy表示原样拷贝；
-         INPUT，输入视频文件；
-         OUTPUT，输出视频文件
-         */
-        //TODO: Here are some instructions
-        //https://trac.ffmpeg.org/wiki/Seeking
-        //https://superuser.com/questions/138331/using-ffmpeg-to-cut-up-video
+            }
 
-        String cmd = "-ss " + start + " -t " + duration + " -accurate_seek" + " -i " + inputFile + " -codec copy -avoid_negative_ts 1 " + outputFile;
-        //String cmd = "-ss " + start + " -i " + inputFile + " -ss " + start + " -t " + duration + " -vcodec copy " + outputFile;
-        //{"ffmpeg", "-ss", "" + startTime, "-y", "-i", inputFile, "-t", "" + induration, "-vcodec", "mpeg4", "-b:v", "2097152", "-b:a", "48000", "-ac", "2", "-ar", "22050", outputFile}
-        //String cmd = "-ss " + start + " -y " + "-i " + inputFile + " -t " + duration + " -vcodec " + "mpeg4 " + "-b:v " + "2097152 " + "-b:a " + "48000 " + "-ac " + "2 " + "-ar " + "22050 "+ outputFile;
-        String[] command = cmd.split(" ");
-        try {
-            final String tempOutFile = outputFile;
-            FFmpeg.getInstance(context).execute(command, new ExecuteBinaryResponseHandler() {
+            @Override
+            public void onProgress(@Nullable Integer progress) {
+                Log.d(TAG, "onProgress");
 
-                @Override
-                public void onFailure(String message) {
-                    Log.d(TAG,"onFailure="+message);
-                }
-
-                @Override
-                public void onFinish() {
-                    Log.d(TAG,"onFinish");
-                }
-
-                @Override
-                public void onProgress(String message) {
-                    Log.d(TAG,"onProgress");
-                }
-
-                @Override
-                public void onSuccess(String s) {
-                    Log.d(TAG,"onSuccess");
-                    callback.onFinishTrim(tempOutFile);
-
-                }
-
-                @Override
-                public void onStart() {
-                    Log.d(TAG,"onStart");
-
-                    callback.onStartTrim();
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            }
+        });
     }
 
     public static void shootVideoThumbInBackground(final Context context, final File videoUri, final int totalThumbsCount, final long startPosition,
@@ -111,7 +74,7 @@ public class VideoTrimmerUtil {
                         } else {
                             frameTime = startPosition + interval * i;
                         }
-                        frameTime = frameTime * 1000*1000;
+                        frameTime = frameTime * 1000 * 1000;
                         Log.d(TAG, "frameTime=" + frameTime);
 
                         Bitmap bitmap = mediaMetadataRetriever.getFrameAtTime(frameTime, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);

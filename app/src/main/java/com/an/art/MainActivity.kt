@@ -27,8 +27,7 @@ class MainActivity : AppCompatActivity() {
         PermissionsFragment.load(this)
             .requestPermissions(
                 arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    Manifest.permission.READ_EXTERNAL_STORAGE
                 ),
                 object : PermissionListener {
                     override fun invoke(isGranted: Boolean) {

@@ -36,6 +36,8 @@ import com.an.file.FileManager;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.audio.AudioAttributes;
+import com.google.android.exoplayer2.source.ClippingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -49,9 +51,11 @@ public class VideoTrimmerView extends FrameLayout {
     private static final String TAG = VideoTrimmerView.class.getSimpleName();
 
     private ExoPlayer exoPlayer;
+    private MediaSource mediaSource;
     private Context mContext;
     private StyledPlayerView mVideoView;
     private ImageView mPlayView;
+    private ImageView soundView;
     private RecyclerView mVideoThumbRecyclerView;
     private RangeSeekBarView mRangeSeekBarView; //裁剪选择框
     private LinearLayout mSeekBarLayout;
@@ -79,6 +83,7 @@ public class VideoTrimmerView extends FrameLayout {
         LayoutInflater.from(context).inflate(R.layout.video_trimmer_view, this, true);
         mVideoView = findViewById(R.id.video_loader);
         mPlayView = findViewById(R.id.icon_video_play);
+        soundView = findViewById(R.id.sound_view);
         mSeekBarLayout = findViewById(R.id.seekBarLayout);
         selectTimeView = findViewById(R.id.select_time_view);
         mVideoThumbRecyclerView = findViewById(R.id.video_frames_recyclerView);
@@ -94,6 +99,15 @@ public class VideoTrimmerView extends FrameLayout {
         findViewById(R.id.cancelBtn).setOnClickListener(view -> onCancelClicked());
         findViewById(R.id.finishBtn).setOnClickListener(view -> onSaveClicked());
         mPlayView.setOnClickListener(v -> videoPlayOrPause());
+        soundView.setOnClickListener(v -> soundOnOrOff());
+    }
+
+    private void soundOnOrOff() {
+        if (exoPlayer.getVolume() > 0) {
+            exoPlayer.setVolume(0);
+        } else {
+            exoPlayer.setVolume(0.3f);
+        }
     }
 
     private void onCancelClicked() {
@@ -127,28 +141,39 @@ public class VideoTrimmerView extends FrameLayout {
         exoPlayer = new ExoPlayer
                 .Builder(getContext())
                 .build();
-        exoPlayer.addMediaSource(createMediaSource(getContext(), inFile.getAbsolutePath()));
+        mediaSource = createMediaSource(getContext(), inFile.getAbsolutePath());
+        exoPlayer.setMediaSource(mediaSource);
         exoPlayer.addListener(new Player.Listener() {
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (playbackState == STATE_READY) {
-                    Log.d(TAG, "STATE_READY=" + exoPlayer.getDuration() + " th=" + Thread.currentThread());
                     videoPrepared(exoPlayer.getDuration());
                 } else if (playbackState == STATE_ENDED) {
-                    Log.d(TAG, "STATE_ENDED=" + exoPlayer.getDuration());
                     videoCompleted();
                 }
             }
 
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
-                Log.d(TAG, "onIsPlayingChanged=" + isPlaying);
                 setPlayPauseViewIcon(isPlaying);
+            }
+
+            @Override
+            public void onVolumeChanged(float volume) {
+                setVolumeView(volume);
             }
         });
         mVideoView.requestFocus();
         mVideoView.setPlayer(exoPlayer);
         exoPlayer.prepare();
+    }
+
+    private void setVolumeView(float volume) {
+        if (volume > 0) {
+            soundView.setImageResource(R.drawable.on);
+        } else {
+            soundView.setImageResource(R.drawable.off);
+        }
     }
 
     private MediaSource createMediaSource(Context context, String uri) {
@@ -161,7 +186,7 @@ public class VideoTrimmerView extends FrameLayout {
 
 
     private void videoPrepared(long videoDuration) {
-        Log.d(TAG, "videoDuration=" + videoDuration);
+        Log.d(TAG,"videoDuration="+videoDuration);
         mDuration = (int) (videoDuration / 1000);
         initRangeSeekBarView(mDuration);
     }
@@ -207,24 +232,34 @@ public class VideoTrimmerView extends FrameLayout {
 
     private void videoStart() {
         exoPlayer.play();
+        mRangeSeekBarView.playingProgressAnimation();
     }
 
     private void videoStop() {
         exoPlayer.pause();
+        mRangeSeekBarView.pauseProgressAnimation();
+    }
+
+    private void videoResume() {
+        int startPosition = (int) (exoPlayer.getCurrentPosition() / 1000);
+        if (startPosition >= mRangeSeekBarView.getSelectedRightTimeInVideo()) {
+            startPosition = mRangeSeekBarView.getSelectedLeftTimeInVideo();
+        }
+        seekTo(startPosition);
+        videoStart();
     }
 
     private void videoPlayOrPause() {
         if (exoPlayer.isPlaying()) {
             videoStop();
         } else {
-            videoStart();
+            videoResume();
         }
     }
 
 
     private void seekTo(int seconds) {
         seconds = seconds * 1000;
-        Log.d(TAG, "seekTo = " + seconds);
         exoPlayer.seekTo(seconds);
     }
 
@@ -239,9 +274,6 @@ public class VideoTrimmerView extends FrameLayout {
 
     private final RangeSeekBarView.OnRangeSeekBarChangeListener mOnRangeSeekBarChangeListener = (leftSelectTime, rightSelectTime, action, pressedThumb) -> {
         switch (action) {
-            case MotionEvent.ACTION_DOWN:
-                videoStop();
-                break;
             case MotionEvent.ACTION_MOVE:
                 videoStop();
                 long position;
@@ -258,9 +290,11 @@ public class VideoTrimmerView extends FrameLayout {
                 videoStart();
                 break;
             default:
+                videoStop();
                 break;
         }
     };
+
 
     @SuppressLint("SetTextI18n")
     private void updateSelectTime(long leftSelectTime, long rightSelectTime) {
@@ -301,10 +335,16 @@ public class VideoTrimmerView extends FrameLayout {
         return (position) * itemWidth - firstVisibleChildView.getLeft();
     }
 
-    /**
-     * Cancel trim thread execut action when finish
-     */
-    public void onDestroy() {
+    public void onResume() {
+        videoResume();
+    }
 
+    public void onPause() {
+        videoStop();
+    }
+
+    public void onDestroy() {
+        exoPlayer.stop();
+        exoPlayer.release();
     }
 }

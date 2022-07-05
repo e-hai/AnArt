@@ -3,6 +3,7 @@ package com.an.art
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import com.an.ffmpeg.code.VideoFFCrop
 import com.an.ffmpeg.widget.Utils
 
 class App : Application() {
@@ -11,6 +12,7 @@ class App : Application() {
         super.onCreate()
         application = this
         Utils.init(this)
+        VideoFFCrop.instance?.init(this)
     }
 
 
