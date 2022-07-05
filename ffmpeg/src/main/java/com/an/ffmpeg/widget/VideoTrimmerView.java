@@ -186,7 +186,7 @@ public class VideoTrimmerView extends FrameLayout {
 
 
     private void videoPrepared(long videoDuration) {
-        Log.d(TAG,"videoDuration="+videoDuration);
+        Log.d(TAG, "videoDuration=" + videoDuration);
         mDuration = (int) (videoDuration / 1000);
         initRangeSeekBarView(mDuration);
     }
@@ -309,30 +309,27 @@ public class VideoTrimmerView extends FrameLayout {
         @Override
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
-            int scrollX = calcScrollXDistance();
-            //达不到滑动的距离
-            if (Math.abs(scrollX) < scaledTouchSlop) {
-                return;
-            }
-            //一个预览帧占的时长
-            float itemThumbnailTime = (mDuration * 1f) / (mThumbsTotalCount * 1f);
-            //一像素占的时长
-            float averagePxMs = itemThumbnailTime * 1000 / THUMBNAIL_SIZE;
-            //移动的像素占的时长
-            long scrollTimeSecond = (long) (scrollX * averagePxMs) / 1000;
+            float percent = scrollPercent();
+            long scrollTimeSecond = (long) (percent * mDuration);
+            Log.d(TAG, "percent=" + percent + " mDuration=" + mDuration + " scrollTimeSecond=" + scrollTimeSecond);
+
             mRangeSeekBarView.setStartTimeInVideo(scrollTimeSecond);
         }
     };
 
     /**
-     * 水平滑动了多少px
+     * 水平滑动的距离占总长度的百分比
      */
-    private int calcScrollXDistance() {
+    private float scrollPercent() {
         LinearLayoutManager layoutManager = (LinearLayoutManager) mVideoThumbRecyclerView.getLayoutManager();
         int position = layoutManager.findFirstVisibleItemPosition();
         View firstVisibleChildView = layoutManager.findViewByPosition(position);
         int itemWidth = firstVisibleChildView.getWidth();
-        return (position) * itemWidth - firstVisibleChildView.getLeft();
+        float scrollX = (position) * itemWidth - firstVisibleChildView.getLeft() + RECYCLER_VIEW_PADDING;
+        Log.d(TAG, "scrollX=" + scrollX + " totalX=" + (mThumbsTotalCount * itemWidth));
+
+        float percent = scrollX / (mThumbsTotalCount * itemWidth);
+        return percent;
     }
 
     public void onResume() {

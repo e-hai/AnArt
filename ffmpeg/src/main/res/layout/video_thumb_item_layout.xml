@@ -2,6 +2,6 @@
 <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/thumb"
-    android:layout_width="72dp"
+    android:layout_width="59dp"
     android:layout_height="match_parent"
     android:scaleType="centerCrop" />

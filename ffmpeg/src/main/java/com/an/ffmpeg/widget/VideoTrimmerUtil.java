@@ -22,8 +22,8 @@ public class VideoTrimmerUtil {
     private static final String TAG = VideoTrimmerUtil.class.getSimpleName();
     public static final long MIN_SHOOT_DURATION_SECONDS = 3;     // 最小剪辑时间3s
     public static final long MAX_SHOOT_DURATION_SECONDS = 15;    // 最小剪辑时间15s
-    public static final int MAX_COUNT_RANGE = 4;        //seekBar的区域内一共有多少张图片
-    public static final int THUMBNAIL_SIZE = Utils.dpToPx(72);//一张图片的宽、高
+    public static final int MAX_COUNT_RANGE = 5;                 //seekBar的区域内一共有多少张图片
+    public static final int THUMBNAIL_SIZE = Utils.dpToPx(72);   //一张图片的宽、高
     public static final int RECYCLER_VIEW_PADDING = Utils.dpToPx(36);
 
     public static void trim(Context context, String srcVideo, String destPath, long startMs, long endMs, final VideoTrimListener callback) {
