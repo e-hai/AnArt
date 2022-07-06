@@ -1,347 +1,351 @@
-package com.an.ffmpeg.widget;
+package com.an.ffmpeg.widget
 
-import static com.an.ffmpeg.widget.VideoTrimmerUtil.MAX_COUNT_RANGE;
-import static com.an.ffmpeg.widget.VideoTrimmerUtil.MAX_SHOOT_DURATION_SECONDS;
-import static com.an.ffmpeg.widget.VideoTrimmerUtil.MIN_SHOOT_DURATION_SECONDS;
-import static com.an.ffmpeg.widget.VideoTrimmerUtil.RECYCLER_VIEW_PADDING;
-import static com.an.ffmpeg.widget.VideoTrimmerUtil.THUMBNAIL_SIZE;
-import static com.google.android.exoplayer2.Player.STATE_ENDED;
-import static com.google.android.exoplayer2.Player.STATE_READY;
+import kotlin.jvm.JvmOverloads
+import android.content.Context
+import android.util.AttributeSet
+import android.widget.FrameLayout
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.source.MediaSource
+import com.google.android.exoplayer2.ui.StyledPlayerView
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import java.io.File
+import android.view.LayoutInflater
+import com.an.ffmpeg.R
+import android.widget.Toast
+import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.upstream.DefaultDataSource
+import com.google.android.exoplayer2.source.ProgressiveMediaSource
+import com.an.ffmpeg.widget.RangeSeekBarView.OnRangeSeekBarChangeListener
+import com.an.ffmpeg.widget.RangeSeekBarView.Thumb
+import android.view.MotionEvent
+import android.annotation.SuppressLint
+import android.util.Log
+import android.view.View
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.an.ffmpeg.code.Utils
+import com.an.ffmpeg.code.VideoThumbItem
+import com.an.ffmpeg.widget.Constant.MAX_COUNT_RANGE
+import com.an.ffmpeg.widget.Constant.MAX_SHOOT_DURATION_SECONDS
+import com.an.ffmpeg.widget.Constant.MIN_SHOOT_DURATION_SECONDS
+import com.google.android.exoplayer2.MediaItem
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.util.AttributeSet;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewConfiguration;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.Toast;
-import android.widget.VideoView;
+class VideoCropView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet?,
+    defStyleAttr: Int = 0
+) : FrameLayout(context, attrs, defStyleAttr) {
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+    private lateinit var exoPlayer: ExoPlayer
+    private lateinit var mediaSource: MediaSource
+    private var videoView: StyledPlayerView
+    private var playingView: ImageView
+    private var soundView: ImageView
+    private var videoThumbRecyclerView: RecyclerView
+    private var seekBarLayout: LinearLayout
+    private var selectTimeView: TextView
+    private var videoThumbAdapter: VideoCropAdapter
+    private var rangeSeekBarView: RangeSeekBarView? = null
+    private var thumbsTotalCount = 0
+    private var videoDurationSec = 0
+    private val recyclerViewPadding = Utils.dpToPx(context, 36)
+    private lateinit var inFile: File
+    private var videoCropViewListener: VideoCropViewListener? = null
 
-import com.an.ffmpeg.R;
-import com.an.file.FileManager;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.audio.AudioAttributes;
-import com.google.android.exoplayer2.source.ClippingMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.ui.PlayerView;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
-import com.google.android.exoplayer2.upstream.DefaultDataSource;
-
-import java.io.File;
-
-public class VideoTrimmerView extends FrameLayout {
-
-    private static final String TAG = VideoTrimmerView.class.getSimpleName();
-
-    private ExoPlayer exoPlayer;
-    private MediaSource mediaSource;
-    private Context mContext;
-    private StyledPlayerView mVideoView;
-    private ImageView mPlayView;
-    private ImageView soundView;
-    private RecyclerView mVideoThumbRecyclerView;
-    private RangeSeekBarView mRangeSeekBarView; //裁剪选择框
-    private LinearLayout mSeekBarLayout;
-    private TextView selectTimeView;
-    private File inFile;
-    private File outFile;
-    private int mDuration = 0; //视频总时长
-    private VideoTrimListener mOnTrimVideoListener;
-    private VideoTrimmerAdapter mVideoThumbAdapter;
-    private int mThumbsTotalCount;
-
-    private final int scaledTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-
-    public VideoTrimmerView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
+    init {
+        LayoutInflater.from(context).inflate(R.layout.video_trimmer_view, this, true)
+        videoView = findViewById(R.id.video_loader)
+        playingView = findViewById(R.id.icon_video_play)
+        soundView = findViewById(R.id.sound_view)
+        seekBarLayout = findViewById(R.id.seekBarLayout)
+        selectTimeView = findViewById(R.id.select_time_view)
+        videoThumbRecyclerView = findViewById(R.id.video_frames_recyclerView)
+        videoThumbRecyclerView.layoutManager = LinearLayoutManager(
+            context,
+            LinearLayoutManager.HORIZONTAL,
+            false
+        )
+        videoThumbAdapter = VideoCropAdapter()
+        videoThumbRecyclerView.adapter = videoThumbAdapter
+        videoThumbRecyclerView.addOnScrollListener(buildOnScrollListener())
+        initListeners()
     }
 
-    public VideoTrimmerView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init(context);
+    private fun buildOnScrollListener(): RecyclerView.OnScrollListener {
+        return object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val percent = scrollPercent()
+                val scrollTimeSecond = (percent * videoDurationSec).toLong()
+                Log.d(
+                    TAG,
+                    "percent=$percent videoDurationSec=$videoDurationSec scrollTimeSecond=$scrollTimeSecond"
+                )
+                rangeSeekBarView?.setStartTimeInVideo(scrollTimeSecond)
+            }
+        }
+
     }
 
-    private void init(Context context) {
-        this.mContext = context;
-        LayoutInflater.from(context).inflate(R.layout.video_trimmer_view, this, true);
-        mVideoView = findViewById(R.id.video_loader);
-        mPlayView = findViewById(R.id.icon_video_play);
-        soundView = findViewById(R.id.sound_view);
-        mSeekBarLayout = findViewById(R.id.seekBarLayout);
-        selectTimeView = findViewById(R.id.select_time_view);
-        mVideoThumbRecyclerView = findViewById(R.id.video_frames_recyclerView);
-        mVideoThumbRecyclerView.setLayoutManager(new LinearLayoutManager(mContext, LinearLayoutManager.HORIZONTAL, false));
-        mVideoThumbAdapter = new VideoTrimmerAdapter();
-        mVideoThumbRecyclerView.setAdapter(mVideoThumbAdapter);
-        mVideoThumbRecyclerView.addOnScrollListener(mOnScrollListener);
-        initListeners();
+    private fun initListeners() {
+        findViewById<View>(R.id.cancelBtn).setOnClickListener { onCancelClicked() }
+        findViewById<View>(R.id.finishBtn).setOnClickListener { onCropClicked() }
+        playingView.setOnClickListener { videoPlayOrPause() }
+        soundView.setOnClickListener { soundOnOrOff() }
     }
 
-
-    private void initListeners() {
-        findViewById(R.id.cancelBtn).setOnClickListener(view -> onCancelClicked());
-        findViewById(R.id.finishBtn).setOnClickListener(view -> onSaveClicked());
-        mPlayView.setOnClickListener(v -> videoPlayOrPause());
-        soundView.setOnClickListener(v -> soundOnOrOff());
-    }
-
-    private void soundOnOrOff() {
-        if (exoPlayer.getVolume() > 0) {
-            exoPlayer.setVolume(0);
+    private fun soundOnOrOff() {
+        if (exoPlayer.volume > 0) {
+            exoPlayer.volume = 0f
         } else {
-            exoPlayer.setVolume(0.3f);
+            exoPlayer.volume = 0.3f
         }
     }
 
-    private void onCancelClicked() {
-        mOnTrimVideoListener.onCancel();
+    private fun onCancelClicked() {
+        videoCropViewListener?.onClickCancel()
     }
 
-
-    public void setOnTrimVideoListener(VideoTrimListener onTrimVideoListener) {
-        mOnTrimVideoListener = onTrimVideoListener;
+    fun setOnTrimVideoListener(onTrimVideoListener: VideoCropViewListener?) {
+        videoCropViewListener = onTrimVideoListener
     }
 
-
-    private void onSaveClicked() {
-        if (mRangeSeekBarView.getSelectTime() < MIN_SHOOT_DURATION_SECONDS) {
-            Toast.makeText(mContext, getResources().getString(R.string.video_shoot_min_tip), Toast.LENGTH_SHORT).show();
+    private fun onCropClicked() {
+        val rangeSeekBarView = rangeSeekBarView ?: return
+        if (rangeSeekBarView.selectTime < MIN_SHOOT_DURATION_SECONDS) {
+            Toast.makeText(
+                context,
+                resources.getString(R.string.video_shoot_min_tip),
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
-            videoStop();
-            VideoTrimmerUtil.trim(mContext,
-                    inFile.getPath(),
-                    getContext().getFilesDir().getAbsolutePath(),
-                    mRangeSeekBarView.getSelectedLeftTimeInVideo() * 1000,
-                    mRangeSeekBarView.getSelectedRightTimeInVideo() * 1000,
-                    mOnTrimVideoListener);
+            videoStop()
+            videoCropViewListener?.onClickCrop(
+                inFile.absolutePath,
+                rangeSeekBarView.selectedLeftTimeInVideo,
+                rangeSeekBarView.selectedRightTimeInVideo
+            )
         }
     }
 
-
-    public void initVideoByURI(final File inFile, final File outFile) {
-        this.inFile = inFile;
-        this.outFile = outFile;
-        exoPlayer = new ExoPlayer
-                .Builder(getContext())
-                .build();
-        mediaSource = createMediaSource(getContext(), inFile.getAbsolutePath());
-        exoPlayer.setMediaSource(mediaSource);
-        exoPlayer.addListener(new Player.Listener() {
-            @Override
-            public void onPlaybackStateChanged(int playbackState) {
-                if (playbackState == STATE_READY) {
-                    videoPrepared(exoPlayer.getDuration());
-                } else if (playbackState == STATE_ENDED) {
-                    videoCompleted();
+    fun initVideoByUri(inFile: File, videoCropViewListener: VideoCropViewListener?) {
+        this.inFile = inFile
+        this.videoCropViewListener = videoCropViewListener
+        exoPlayer = ExoPlayer.Builder(context)
+            .build()
+        mediaSource = createMediaSource(context, inFile.absolutePath)
+        exoPlayer.setMediaSource(mediaSource)
+        exoPlayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) {
+                    videoPrepared(exoPlayer.duration / 1000)
+                } else if (playbackState == Player.STATE_ENDED) {
+                    videoCompleted()
                 }
             }
 
-            @Override
-            public void onIsPlayingChanged(boolean isPlaying) {
-                setPlayPauseViewIcon(isPlaying);
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                setPlayPauseViewIcon(isPlaying)
             }
 
-            @Override
-            public void onVolumeChanged(float volume) {
-                setVolumeView(volume);
+            override fun onVolumeChanged(volume: Float) {
+                setVolumeView(volume)
             }
-        });
-        mVideoView.requestFocus();
-        mVideoView.setPlayer(exoPlayer);
-        exoPlayer.prepare();
+        })
+        videoView.requestFocus()
+        videoView.player = exoPlayer
+        exoPlayer.prepare()
     }
 
-    private void setVolumeView(float volume) {
-        if (volume > 0) {
-            soundView.setImageResource(R.drawable.on);
-        } else {
-            soundView.setImageResource(R.drawable.off);
-        }
-    }
-
-    private MediaSource createMediaSource(Context context, String uri) {
-        DefaultDataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context.getApplicationContext());
-        MediaItem mediaItem = MediaItem.fromUri(uri);
-        return new ProgressiveMediaSource
-                .Factory(dataSourceFactory)
-                .createMediaSource(mediaItem);
-    }
-
-
-    private void videoPrepared(long videoDuration) {
-        Log.d(TAG, "videoDuration=" + videoDuration);
-        mDuration = (int) (videoDuration / 1000);
-        initRangeSeekBarView(mDuration);
-    }
 
     /**
      * 初始化裁剪帧
-     **/
-    private void initRangeSeekBarView(int durationSeconds) {
-        if (mRangeSeekBarView != null) return;
+     */
+    private fun initRangeSeekBarView(durationSeconds: Int) {
+        if (rangeSeekBarView != null) return
         //最大可裁剪时间：当视频时长少于默认值时，最大可裁剪时间即为视频时长
         //由于不需要把所有帧取出来浏览，因此做个规则提取一部分帧
-        long maxShootDuration;
+        val maxShootDuration: Long
         if (durationSeconds <= MAX_SHOOT_DURATION_SECONDS) {
-            mThumbsTotalCount = MAX_COUNT_RANGE;
-            maxShootDuration = durationSeconds;
+            thumbsTotalCount = MAX_COUNT_RANGE
+            maxShootDuration = durationSeconds.toLong()
         } else {
-            mThumbsTotalCount = (int) (durationSeconds * 1.0f / (MAX_SHOOT_DURATION_SECONDS * 1.0f) * MAX_COUNT_RANGE);
-            maxShootDuration = MAX_SHOOT_DURATION_SECONDS;
+            thumbsTotalCount =
+                (durationSeconds * 1.0f / (MAX_SHOOT_DURATION_SECONDS * 1.0f) * MAX_COUNT_RANGE).toInt()
+            maxShootDuration = MAX_SHOOT_DURATION_SECONDS
         }
-        mVideoThumbRecyclerView.addItemDecoration(new SpacesItemDecoration(RECYCLER_VIEW_PADDING, mThumbsTotalCount));
-        mRangeSeekBarView = new RangeSeekBarView(mContext, MIN_SHOOT_DURATION_SECONDS, maxShootDuration);
-        mRangeSeekBarView.setStartTimeInVideo(0);
-        mRangeSeekBarView.setOnRangeSeekBarChangeListener(mOnRangeSeekBarChangeListener);
-        mSeekBarLayout.addView(mRangeSeekBarView);
-        startShootVideoThumbs(mContext, inFile, mThumbsTotalCount, 0, durationSeconds);
+        videoThumbRecyclerView.addItemDecoration(
+            SpacesItemDecoration(
+                recyclerViewPadding,
+                thumbsTotalCount
+            )
+        )
+        rangeSeekBarView =
+            RangeSeekBarView(context, MIN_SHOOT_DURATION_SECONDS, maxShootDuration).apply {
+                setStartTimeInVideo(0)
+                setOnRangeSeekBarChangeListener(buildRangeSeekBarChangeListener())
+            }
+
+        seekBarLayout.addView(rangeSeekBarView)
+        startShootVideoThumbs(thumbsTotalCount, durationSeconds)
+    }
+
+    private fun buildRangeSeekBarChangeListener(): OnRangeSeekBarChangeListener {
+        return object : OnRangeSeekBarChangeListener {
+            override fun onRangeSeekBarChanged(
+                leftSelectTime: Long,
+                rightSelectTime: Long,
+                action: Int,
+                pressedThumb: Thumb?
+            ) {
+                when (action) {
+                    MotionEvent.ACTION_MOVE -> {
+                        videoStop()
+                        val position: Long = if (pressedThumb == Thumb.MIN) {
+                            leftSelectTime
+                        } else {
+                            rightSelectTime
+                        }
+                        seekTo(position.toInt())
+                        updateSelectTime(leftSelectTime, rightSelectTime)
+                    }
+                    MotionEvent.ACTION_UP -> {
+                        seekTo(leftSelectTime.toInt())
+                        videoStart()
+                    }
+                    else -> videoStop()
+                }
+            }
+        }
     }
 
     /**
      * 获取预览帧
-     **/
-    private void startShootVideoThumbs(final Context context, final File inFile, int totalThumbsCount, long startPosition, long endPosition) {
-        VideoTrimmerUtil.shootVideoThumbInBackground(context, inFile, totalThumbsCount, startPosition, endPosition,
-                (bitmap, interval) -> {
-                    if (bitmap != null) {
-                        UiThreadExecutor.runTask("", () -> mVideoThumbAdapter.addBitmaps(bitmap), 0L);
-                    }
-                });
+     */
+    private fun startShootVideoThumbs(
+        totalThumbsCount: Int,
+        endSec: Int
+    ) {
+        val startSec = 0
+        videoCropViewListener?.onLoadThumbList(
+            totalThumbsCount,
+            inFile.absolutePath,
+            startSec,
+            endSec
+        )
     }
 
-    private void videoCompleted() {
-        setPlayPauseViewIcon(false);
+    private fun createMediaSource(context: Context, uri: String): MediaSource {
+        val dataSourceFactory = DefaultDataSource.Factory(context.applicationContext)
+        val mediaItem = MediaItem.fromUri(uri)
+        return ProgressiveMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
     }
 
-    private void videoStart() {
-        exoPlayer.play();
-        mRangeSeekBarView.playingProgressAnimation();
+    private fun videoPrepared(durationSec: Long) {
+        videoDurationSec = durationSec.toInt()
+        initRangeSeekBarView(videoDurationSec)
     }
 
-    private void videoStop() {
-        exoPlayer.pause();
-        mRangeSeekBarView.pauseProgressAnimation();
+    private fun videoCompleted() {
+        setPlayPauseViewIcon(false)
     }
 
-    private void videoResume() {
-        int startPosition = (int) (exoPlayer.getCurrentPosition() / 1000);
-        if (startPosition >= mRangeSeekBarView.getSelectedRightTimeInVideo()) {
-            startPosition = mRangeSeekBarView.getSelectedLeftTimeInVideo();
+    private fun videoStart() {
+        exoPlayer.play()
+        rangeSeekBarView?.playingProgressAnimation()
+    }
+
+    private fun videoStop() {
+        exoPlayer.pause()
+        rangeSeekBarView?.pauseProgressAnimation()
+    }
+
+    private fun videoResume() {
+        val rangeSeekBarView = rangeSeekBarView ?: return
+        var startPosition = (exoPlayer.currentPosition / 1000).toInt()
+        if (startPosition >= rangeSeekBarView.selectedRightTimeInVideo) {
+            startPosition = rangeSeekBarView.selectedLeftTimeInVideo
         }
-        seekTo(startPosition);
-        videoStart();
+        seekTo(startPosition)
+        videoStart()
     }
 
-    private void videoPlayOrPause() {
-        if (exoPlayer.isPlaying()) {
-            videoStop();
+    private fun videoPlayOrPause() {
+        if (exoPlayer.isPlaying) {
+            videoStop()
         } else {
-            videoResume();
+            videoResume()
         }
     }
 
-
-    private void seekTo(int seconds) {
-        seconds = seconds * 1000;
-        exoPlayer.seekTo(seconds);
+    private fun seekTo(seconds: Int) {
+        exoPlayer.seekTo(seconds.toLong() * 1000)
     }
 
-    private void setPlayPauseViewIcon(boolean isPlaying) {
-        mPlayView.setImageResource(isPlaying ? R.drawable.play : R.drawable.pause);
+    private fun setVolumeView(volume: Float) {
+        if (volume > 0) {
+            soundView.setImageResource(R.drawable.on)
+        } else {
+            soundView.setImageResource(R.drawable.off)
+        }
+    }
+
+    private fun setPlayPauseViewIcon(isPlaying: Boolean) {
+        playingView.setImageResource(if (isPlaying) R.drawable.play else R.drawable.pause)
         if (isPlaying) {
-            mPlayView.postDelayed(() -> mPlayView.setVisibility(GONE), 1000L);
+            playingView.postDelayed({ playingView.visibility = GONE }, 1000L)
         } else {
-            mPlayView.setVisibility(VISIBLE);
+            playingView.visibility = VISIBLE
         }
     }
-
-    private final RangeSeekBarView.OnRangeSeekBarChangeListener mOnRangeSeekBarChangeListener = (leftSelectTime, rightSelectTime, action, pressedThumb) -> {
-        switch (action) {
-            case MotionEvent.ACTION_MOVE:
-                videoStop();
-                long position;
-                if (pressedThumb == RangeSeekBarView.Thumb.MIN) {
-                    position = leftSelectTime;
-                } else {
-                    position = rightSelectTime;
-                }
-                seekTo((int) position);
-                updateSelectTime(leftSelectTime, rightSelectTime);
-                break;
-            case MotionEvent.ACTION_UP:
-                seekTo((int) leftSelectTime);
-                videoStart();
-                break;
-            default:
-                videoStop();
-                break;
-        }
-    };
 
 
     @SuppressLint("SetTextI18n")
-    private void updateSelectTime(long leftSelectTime, long rightSelectTime) {
-        selectTimeView.setText(
-                Utils.convertSecondsToTime(leftSelectTime)
-                        + "/"
-                        + Utils.convertSecondsToTime(rightSelectTime));
+    private fun updateSelectTime(leftSelectTime: Long, rightSelectTime: Long) {
+        selectTimeView.text = (Utils.convertSecondsToTime(leftSelectTime)
+                + "/"
+                + Utils.convertSecondsToTime(rightSelectTime))
     }
-
-    private final RecyclerView.OnScrollListener mOnScrollListener = new RecyclerView.OnScrollListener() {
-
-        @Override
-        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-            super.onScrolled(recyclerView, dx, dy);
-            float percent = scrollPercent();
-            long scrollTimeSecond = (long) (percent * mDuration);
-            Log.d(TAG, "percent=" + percent + " mDuration=" + mDuration + " scrollTimeSecond=" + scrollTimeSecond);
-
-            mRangeSeekBarView.setStartTimeInVideo(scrollTimeSecond);
-        }
-    };
 
     /**
      * 水平滑动的距离占总长度的百分比
      */
-    private float scrollPercent() {
-        LinearLayoutManager layoutManager = (LinearLayoutManager) mVideoThumbRecyclerView.getLayoutManager();
-        int position = layoutManager.findFirstVisibleItemPosition();
-        View firstVisibleChildView = layoutManager.findViewByPosition(position);
-        int itemWidth = firstVisibleChildView.getWidth();
-        float scrollX = (position) * itemWidth - firstVisibleChildView.getLeft() + RECYCLER_VIEW_PADDING;
-        Log.d(TAG, "scrollX=" + scrollX + " totalX=" + (mThumbsTotalCount * itemWidth));
-
-        float percent = scrollX / (mThumbsTotalCount * itemWidth);
-        return percent;
+    private fun scrollPercent(): Float {
+        val layoutManager = videoThumbRecyclerView.layoutManager as LinearLayoutManager
+        val position = layoutManager.findFirstVisibleItemPosition()
+        val firstVisibleChildView = layoutManager.findViewByPosition(position) ?: return 0f
+        val itemWidth = firstVisibleChildView.width
+        val scrollX: Float =
+            (position * itemWidth - firstVisibleChildView.left + recyclerViewPadding).toFloat()
+        Log.d(
+            TAG,
+            "scrollX=" + scrollX + " totalX=" + thumbsTotalCount * itemWidth
+        )
+        return scrollX / (thumbsTotalCount * itemWidth)
     }
 
-    public void onResume() {
-        videoResume();
+    fun updateThumbs(thumbList: List<VideoThumbItem>) {
+        videoThumbAdapter.updateThumbs(thumbList)
     }
 
-    public void onPause() {
-        videoStop();
+    fun onResume() {
+        videoResume()
     }
 
-    public void onDestroy() {
-        exoPlayer.stop();
-        exoPlayer.release();
+    fun onPause() {
+        videoStop()
     }
+
+    fun onDestroy() {
+        exoPlayer.stop()
+        exoPlayer.release()
+    }
+
+    companion object {
+        private val TAG = VideoCropView::class.java.simpleName
+    }
+
 }

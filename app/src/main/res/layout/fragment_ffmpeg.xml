@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.an.ffmpeg.widget.VideoTrimmerView
+    <com.an.ffmpeg.widget.VideoCropView
         android:id="@+id/trimmer_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

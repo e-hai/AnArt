@@ -1,21 +1,23 @@
 package com.an.art.demo_ffmpeg
 
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.an.art.databinding.FragmentFfmpegBinding
-import com.an.art.demo_ffmpeg.FFmpegActivity.Companion.VIDEO_FILE_KEY
 import com.an.art.demo_ffmpeg.FFmpegActivity.Companion.VIDEO_URI_KEY
-import com.an.ffmpeg.widget.VideoTrimListener
+import com.an.ffmpeg.code.VideoCropViewModel
+import com.an.ffmpeg.widget.VideoCropViewListener
+import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class FFmpegFragment : Fragment() {
     private lateinit var binding: FragmentFfmpegBinding
-
+    private val viewModel: VideoCropViewModel by viewModels()
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -28,29 +30,42 @@ class FFmpegFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setVideUri(
             activity?.intent?.getSerializableExtra(VIDEO_URI_KEY) as File,
-            activity?.intent?.getSerializableExtra(VIDEO_FILE_KEY) as File
         )
+        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            viewModel.cropStatus.collect {
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            viewModel.thumbList.collectLatest {
+                binding.trimmerView.updateThumbs(it)
+            }
+        }
+    }
 
-        binding.trimmerView.setOnTrimVideoListener(object : VideoTrimListener {
-            override fun onStartTrim() {
-                Log.d("owow", "onStartTrim")
+    private fun setVideUri(inFile: File) {
+        Log.d(TAG, "inFile=${inFile.absolutePath}")
 
+        binding.trimmerView.initVideoByUri(inFile, object : VideoCropViewListener {
+            override fun onLoadThumbList(
+                totalThumbsCount: Int,
+                srcVideoPath: String,
+                startSec: Int,
+                endSec: Int
+            ) {
+                viewModel.getVideoThumbList(totalThumbsCount, srcVideoPath, startSec, endSec)
             }
 
-            override fun onFinishTrim(url: String?) {
-                Log.d("owow", "onFinishTrim=$url")
-
+            override fun onClickCrop(srcVideoPath: String, startSec: Int, endSec: Int) {
+                viewModel.startCrop(srcVideoPath, startSec, endSec)
             }
 
-
-            override fun onCancel() {
-                Log.d("owow", "onCancel")
+            override fun onClickCancel() {
+                activity?.finish()
             }
         })
     }
 
-    private fun setVideUri(inFile: File, outFile: File) {
-        Log.d("owow", "inFile=${inFile.absolutePath}  outFile=${outFile.absolutePath}")
-        binding.trimmerView.initVideoByURI(inFile, outFile)
+    companion object {
+        const val TAG = "FFmpegFragment"
     }
 }

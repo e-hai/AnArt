@@ -24,13 +24,10 @@ class FFmpegActivity : AppCompatActivity() {
 
     companion object {
         const val VIDEO_URI_KEY = "VIDEO_URI_KEY"
-        const val VIDEO_FILE_KEY = "VIDEO_FILE_KEY"
 
         fun call(from: FragmentActivity, videoUri: File) {
-            val outfile = FileManager.specificStorage(App.application).createMovie("testff").toFile()
             val bundle = Bundle()
             bundle.putSerializable(VIDEO_URI_KEY, videoUri)
-            bundle.putSerializable(VIDEO_FILE_KEY, outfile)
             val intent = Intent(from, FFmpegActivity::class.java)
             intent.putExtras(bundle)
             from.startActivity(intent)

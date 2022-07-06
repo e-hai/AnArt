@@ -1,7 +1,7 @@
-package com.an.ffmpeg.widget;
+package com.an.ffmpeg.widget
 
-public interface VideoTrimListener {
-    void onStartTrim();
-    void onFinishTrim(String url);
-    void onCancel();
+interface VideoCropViewListener {
+    fun onLoadThumbList(totalThumbsCount: Int, srcVideoPath: String, startSec: Int, endSec: Int)
+    fun onClickCrop(srcVideoPath: String, startSec: Int, endSec: Int)
+    fun onClickCancel()
 }
