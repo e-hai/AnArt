@@ -1,23 +1,31 @@
 package com.an.art.demo_ffmpeg
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.net.toFile
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import com.an.art.App
 import com.an.art.databinding.FragmentFfmpegBinding
 import com.an.art.demo_ffmpeg.FFmpegActivity.Companion.VIDEO_URI_KEY
+import com.an.ffmpeg.R
 import com.an.ffmpeg.code.VideoCropViewModel
+import com.an.ffmpeg.widget.Constant
 import com.an.ffmpeg.widget.VideoCropViewListener
+import com.an.file.FileManager
 import kotlinx.coroutines.flow.collectLatest
 import java.io.File
 
 class FFmpegFragment : Fragment() {
     private lateinit var binding: FragmentFfmpegBinding
     private val viewModel: VideoCropViewModel by viewModels()
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -28,9 +36,13 @@ class FFmpegFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setVideUri(
-            activity?.intent?.getSerializableExtra(VIDEO_URI_KEY) as File,
-        )
+        activity?.intent?.getParcelableExtra<Uri>(VIDEO_URI_KEY)?.let {
+            val srcVideo = FileManager.specificStorage(App.application)
+                .saveMovie("srcVideo", activity?.contentResolver?.openInputStream(it) ?: return)
+                .toFile()
+            setVideUri(srcVideo)
+        }
+
         viewLifecycleOwner.lifecycleScope.launchWhenStarted {
             viewModel.cropStatus.collect {
             }
@@ -54,15 +66,22 @@ class FFmpegFragment : Fragment() {
             ) {
                 viewModel.getVideoThumbList(totalThumbsCount, srcVideoPath, startSec, endSec)
             }
-
-            override fun onClickCrop(srcVideoPath: String, startSec: Int, endSec: Int) {
-                viewModel.startCrop(srcVideoPath, startSec, endSec)
-            }
-
-            override fun onClickCancel() {
-                activity?.finish()
-            }
         })
+        binding.finishBtn.setOnClickListener {
+            onCropClicked()
+        }
+    }
+
+
+    private fun onCropClicked() {
+        val srcVideoPath =binding.trimmerView.srcVideo.absolutePath
+
+        binding.trimmerView.onPause()
+        viewModel.startCrop(
+            srcVideoPath,
+            binding.trimmerView.getCropStartTimeSec(),
+            binding.trimmerView.getCropEndTimeSec()
+        )
     }
 
     companion object {

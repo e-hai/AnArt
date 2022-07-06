@@ -13,7 +13,6 @@ import android.view.animation.LinearInterpolator
 import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.animation.AnimatorListenerAdapter
 import android.graphics.*
-import android.util.Log
 import android.view.View
 import com.an.ffmpeg.code.Utils
 
@@ -485,9 +484,8 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      *
      * @param minRangeTime 秒
      */
-    fun setMinRangeTime(minRangeTime: Long) {
+    private fun setMinRangeTime(minRangeTime: Long) {
         this.minRangeTime = minRangeTime
-        Log.d(TAG, "minRangeTime=$minRangeTime")
     }
 
     /**
@@ -495,9 +493,8 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      *
      * @param maxRangeTime 秒
      */
-    fun setMaxRangeTime(maxRangeTime: Long) {
+    private fun setMaxRangeTime(maxRangeTime: Long) {
         this.maxRangeTime = maxRangeTime
-        Log.d(TAG, "maxRangeTime=$maxRangeTime")
     }
 
     /**
@@ -584,14 +581,12 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
         val start = progress
         val end = 1f
         val durationMs = ((selectTime - selectTime * progress) * 1000).toLong() //毫秒
-        Log.d(TAG, "start=$start duration=$durationMs")
         progressAnimator = ValueAnimator.ofFloat(start, end).setDuration(durationMs).apply {
             interpolator = LinearInterpolator()
-            addUpdateListener(AnimatorUpdateListener { animation: ValueAnimator ->
+            addUpdateListener { animation: ValueAnimator ->
                 progress = animation.animatedValue as Float
-                Log.d(TAG, "progress=$progress")
                 invalidate()
-            })
+            }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     resetProgress()
@@ -601,7 +596,6 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
                         MotionEvent.ACTION_CANCEL,
                         Thumb.MIN
                     )
-                    Log.d(TAG, "onAnimationEnd=$progress")
                 }
             })
             start()

@@ -13,7 +13,6 @@ import android.widget.TextView
 import java.io.File
 import android.view.LayoutInflater
 import com.an.ffmpeg.R
-import android.widget.Toast
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.upstream.DefaultDataSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
@@ -21,8 +20,6 @@ import com.an.ffmpeg.widget.RangeSeekBarView.OnRangeSeekBarChangeListener
 import com.an.ffmpeg.widget.RangeSeekBarView.Thumb
 import android.view.MotionEvent
 import android.annotation.SuppressLint
-import android.util.Log
-import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.an.ffmpeg.code.Utils
@@ -51,11 +48,11 @@ class VideoCropView @JvmOverloads constructor(
     private var thumbsTotalCount = 0
     private var videoDurationSec = 0
     private val recyclerViewPadding = Utils.dpToPx(context, 36)
-    private lateinit var inFile: File
     private var videoCropViewListener: VideoCropViewListener? = null
+    lateinit var srcVideo: File
 
     init {
-        LayoutInflater.from(context).inflate(R.layout.video_trimmer_view, this, true)
+        LayoutInflater.from(context).inflate(R.layout.video_crop_view, this, true)
         videoView = findViewById(R.id.video_loader)
         playingView = findViewById(R.id.icon_video_play)
         soundView = findViewById(R.id.sound_view)
@@ -79,10 +76,6 @@ class VideoCropView @JvmOverloads constructor(
                 super.onScrolled(recyclerView, dx, dy)
                 val percent = scrollPercent()
                 val scrollTimeSecond = (percent * videoDurationSec).toLong()
-                Log.d(
-                    TAG,
-                    "percent=$percent videoDurationSec=$videoDurationSec scrollTimeSecond=$scrollTimeSecond"
-                )
                 rangeSeekBarView?.setStartTimeInVideo(scrollTimeSecond)
             }
         }
@@ -90,8 +83,6 @@ class VideoCropView @JvmOverloads constructor(
     }
 
     private fun initListeners() {
-        findViewById<View>(R.id.cancelBtn).setOnClickListener { onCancelClicked() }
-        findViewById<View>(R.id.finishBtn).setOnClickListener { onCropClicked() }
         playingView.setOnClickListener { videoPlayOrPause() }
         soundView.setOnClickListener { soundOnOrOff() }
     }
@@ -104,38 +95,13 @@ class VideoCropView @JvmOverloads constructor(
         }
     }
 
-    private fun onCancelClicked() {
-        videoCropViewListener?.onClickCancel()
-    }
 
-    fun setOnTrimVideoListener(onTrimVideoListener: VideoCropViewListener?) {
-        videoCropViewListener = onTrimVideoListener
-    }
-
-    private fun onCropClicked() {
-        val rangeSeekBarView = rangeSeekBarView ?: return
-        if (rangeSeekBarView.selectTime < MIN_SHOOT_DURATION_SECONDS) {
-            Toast.makeText(
-                context,
-                resources.getString(R.string.video_shoot_min_tip),
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            videoStop()
-            videoCropViewListener?.onClickCrop(
-                inFile.absolutePath,
-                rangeSeekBarView.selectedLeftTimeInVideo,
-                rangeSeekBarView.selectedRightTimeInVideo
-            )
-        }
-    }
-
-    fun initVideoByUri(inFile: File, videoCropViewListener: VideoCropViewListener?) {
-        this.inFile = inFile
+    fun initVideoByUri(srcVideo: File, videoCropViewListener: VideoCropViewListener?) {
+        this.srcVideo = srcVideo
         this.videoCropViewListener = videoCropViewListener
         exoPlayer = ExoPlayer.Builder(context)
             .build()
-        mediaSource = createMediaSource(context, inFile.absolutePath)
+        mediaSource = createMediaSource(context, srcVideo.absolutePath)
         exoPlayer.setMediaSource(mediaSource)
         exoPlayer.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -184,7 +150,6 @@ class VideoCropView @JvmOverloads constructor(
         )
         rangeSeekBarView =
             RangeSeekBarView(context, MIN_SHOOT_DURATION_SECONDS, maxShootDuration).apply {
-                setStartTimeInVideo(0)
                 setOnRangeSeekBarChangeListener(buildRangeSeekBarChangeListener())
             }
 
@@ -231,7 +196,7 @@ class VideoCropView @JvmOverloads constructor(
         val startSec = 0
         videoCropViewListener?.onLoadThumbList(
             totalThumbsCount,
-            inFile.absolutePath,
+            srcVideo.absolutePath,
             startSec,
             endSec
         )
@@ -287,9 +252,9 @@ class VideoCropView @JvmOverloads constructor(
 
     private fun setVolumeView(volume: Float) {
         if (volume > 0) {
-            soundView.setImageResource(R.drawable.on)
+            soundView.setImageResource(R.drawable.icon_sound_on)
         } else {
-            soundView.setImageResource(R.drawable.off)
+            soundView.setImageResource(R.drawable.icon_sound_off)
         }
     }
 
@@ -320,15 +285,19 @@ class VideoCropView @JvmOverloads constructor(
         val itemWidth = firstVisibleChildView.width
         val scrollX: Float =
             (position * itemWidth - firstVisibleChildView.left + recyclerViewPadding).toFloat()
-        Log.d(
-            TAG,
-            "scrollX=" + scrollX + " totalX=" + thumbsTotalCount * itemWidth
-        )
         return scrollX / (thumbsTotalCount * itemWidth)
     }
 
     fun updateThumbs(thumbList: List<VideoThumbItem>) {
         videoThumbAdapter.updateThumbs(thumbList)
+    }
+
+    fun getCropStartTimeSec(): Int {
+        return rangeSeekBarView?.selectedLeftTimeInVideo ?: 0
+    }
+
+    fun getCropEndTimeSec(): Int {
+        return rangeSeekBarView?.selectedRightTimeInVideo ?: 0
     }
 
     fun onResume() {
@@ -342,10 +311,6 @@ class VideoCropView @JvmOverloads constructor(
     fun onDestroy() {
         exoPlayer.stop()
         exoPlayer.release()
-    }
-
-    companion object {
-        private val TAG = VideoCropView::class.java.simpleName
     }
 
 }

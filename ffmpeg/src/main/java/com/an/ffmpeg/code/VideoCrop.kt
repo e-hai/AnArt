@@ -2,7 +2,6 @@ package com.an.ffmpeg.code
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
@@ -20,22 +19,17 @@ object VideoCrop {
      * 初始化
      */
     suspend fun init(context: Application) = withContext(Dispatchers.IO) {
-        Log.d(TAG, "initializing...")
         var inputSrc: InputStream? = null
         var outDest: FileOutputStream? = null
         try {
             val ffmpegPath = context.applicationInfo.nativeLibraryDir + "/ffmpeg.so"
             val ffmpegFile = File(ffmpegPath)
-            Log.d(TAG, "initialized exFile...=${ffmpegFile.absolutePath}")
 
             inputSrc = context.assets.open("ffmpeg.so")
             if (ffmpegFile.exists() && inputSrc.available().toLong() == ffmpegFile.length()) {
-                Log.d(TAG, "initialized already...")
                 return@withContext
             }
             outDest = FileOutputStream(ffmpegPath)
-
-            Log.d(TAG, "copying executable...")
             val buf = ByteArray(96 * 1024)
             var length: Int
             while (inputSrc.read(buf).also { length = it } != -1) {
@@ -44,12 +38,10 @@ object VideoCrop {
             outDest.flush()
             outDest.close()
             inputSrc.close()
-            Log.d(TAG, "executable is copyed, applying permissions...")
 
             Runtime.getRuntime().exec("/system/bin/chmod 755 $ffmpegPath").waitFor()
-            Log.d(TAG, "ffmpeg is initialized")
         } catch (e: Exception) {
-            Log.d(TAG, "ffmpeg initialization is failed, " + e.javaClass.name + ": " + e.message)
+            e.printStackTrace()
         } finally {
             if (inputSrc != null) {
                 try {
@@ -94,7 +86,6 @@ object VideoCrop {
 //                + " -c copy "                //直接复制一段，不能与-r一起使用
                 + " -r 24 "                    //帧数修改为24
                 + "" + destFilePath + "")      //加引号避免名字有空格无法识别
-        Log.d(TAG, "running command $cmd")
 
         val resultCode = try {
             val ffmpegCmd = Runtime.getRuntime().exec(cmd)
@@ -103,7 +94,6 @@ object VideoCrop {
             var count = 0
             while (errorScanner.hasNextLine()) {
                 val line = errorScanner.nextLine()
-                Log.d(TAG, "ffmpeg: $line")
                 ++count
                 val fz = count
                 val fm = duration * 1000 / 100
@@ -113,17 +103,14 @@ object VideoCrop {
             }
             ffmpegCmd.waitFor()
         } catch (e: Exception) {
-            Log.d(TAG, "crop exception " + e.javaClass.name + ": " + e.message)
+            e.printStackTrace()
             200
         }
 
-        Log.d(TAG, "ffmpeg is finished with code $resultCode")
         if (resultCode == 0) {
-            Log.d(TAG, "finished ，video path = $destFilePath")
             emit(VideoCropStatus.Loading(100))
             emit(VideoCropStatus.Success(destFilePath))
         } else {
-            Log.d(TAG, "crop fail ")
             emit(VideoCropStatus.Fail("crop exception "))
         }
     }

@@ -49,10 +49,8 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQ_CODE && resultCode == RESULT_OK) {
             val uri = data?.data ?: return
-            val inFIle = FileManager.specificStorage(App.application)
-                .saveMovie("inputFile", contentResolver.openInputStream(uri) ?: return)
-                .toFile()
-            FFmpegActivity.call(this, inFIle)
+
+            FFmpegActivity.call(this, uri)
             finish()
         }
     }
