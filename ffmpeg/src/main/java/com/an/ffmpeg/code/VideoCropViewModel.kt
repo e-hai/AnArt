@@ -23,7 +23,7 @@ class VideoCropViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val outputName = "videoCrop_$timeStamp.mp4"
-            val destPath = File(getApplication<Application>().filesDir, outputName).absolutePath
+            val destPath = File(getApplication<Application>().filesDir, outputName).apply { createNewFile() }.absolutePath
             val duration = endSec - startSec
 
             VideoCrop.cropVideo(getApplication(), srcVideoPath, destPath, startSec, duration)

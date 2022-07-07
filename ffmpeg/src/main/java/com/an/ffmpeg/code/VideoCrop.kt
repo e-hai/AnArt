@@ -2,6 +2,7 @@ package com.an.ffmpeg.code
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
@@ -74,7 +75,9 @@ object VideoCrop {
         start: Int,
         duration: Int
     ) = flow {
-
+        val frameRate = 24
+        val width = 720
+        val height = 720
         //-ss 0 -t 5  时间裁切
         //-strict -2 -vf crop=500:500:0:100   尺寸裁切
         val cmd = (context.applicationInfo.nativeLibraryDir
@@ -82,9 +85,10 @@ object VideoCrop {
                 + " -y -i "
                 + "" + srcFilePath + ""        //加引号避免名字有空格无法识别
                 + " -ss " + start
-                + " -t " + duration            // + " -strict -2 -vf crop=" + width + ":" + height + ":" + x + ":" + y + " -preset fast "
+                + " -t " + duration
+                + " -vf scale=w=$width:h=$height:force_original_aspect_ratio=decrease "
 //                + " -c copy "                //直接复制一段，不能与-r一起使用
-                + " -r 24 "                    //帧数修改为24
+                + " -r $frameRate "            //帧数修改为24
                 + "" + destFilePath + "")      //加引号避免名字有空格无法识别
 
         val resultCode = try {
@@ -94,6 +98,7 @@ object VideoCrop {
             var count = 0
             while (errorScanner.hasNextLine()) {
                 val line = errorScanner.nextLine()
+                Log.d(TAG, line)
                 ++count
                 val fz = count
                 val fm = duration * 1000 / 100
@@ -106,7 +111,6 @@ object VideoCrop {
             e.printStackTrace()
             200
         }
-
         if (resultCode == 0) {
             emit(VideoCropStatus.Loading(100))
             emit(VideoCropStatus.Success(destFilePath))
