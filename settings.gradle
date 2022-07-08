@@ -11,3 +11,4 @@ rootProject.name = "AnArt"
 include ':app'
 include ':gl'
 include ':ffmpeg'
+include ':opencv'

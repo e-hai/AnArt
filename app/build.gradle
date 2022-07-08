@@ -49,6 +49,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
     implementation "androidx.fragment:fragment-ktx:1.4.1"
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.5.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.0'
     // CameraX core library using the camera2 implementation
     def camerax_version = "1.1.0-beta02"
     // The following line is optional, as the core library is included indirectly by camera-camera2
@@ -66,12 +68,13 @@ dependencies {
     //Firebase
     implementation platform('com.google.firebase:firebase-bom:29.0.3')
     implementation 'com.google.firebase:firebase-analytics'
-    //ML
     implementation 'com.google.mlkit:face-detection:16.1.5'
-
+    
     implementation("com.github.e-hai:AnFile:1.1.0")
+    implementation("io.coil-kt:coil:2.1.0")
 
     implementation project(":gl")
     implementation project(":ffmpeg")
-
+    implementation project(":opencv")
 }
+

@@ -1,5 +1,6 @@
 package com.an.art.demo_ffmpeg
 
+import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,7 +10,11 @@ import androidx.core.net.toFile
 import androidx.fragment.app.FragmentActivity
 import com.an.art.App
 import com.an.art.databinding.ActivityFfmpegBinding
+import com.an.ffmpeg.code.VideoCrop
 import com.an.file.FileManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 class FFmpegActivity : AppCompatActivity() {
@@ -31,6 +36,13 @@ class FFmpegActivity : AppCompatActivity() {
             val intent = Intent(from, FFmpegActivity::class.java)
             intent.putExtras(bundle)
             from.startActivity(intent)
+        }
+
+
+         fun initViewCrop(application: Application) {
+            MainScope().launch(Dispatchers.IO) {
+                VideoCrop.init(application)
+            }
         }
     }
 }

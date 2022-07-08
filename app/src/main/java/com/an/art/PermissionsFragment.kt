@@ -1,6 +1,8 @@
 package com.an.art
 
+import android.content.Context
 import android.content.pm.PackageManager
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -10,6 +12,24 @@ import androidx.fragment.app.FragmentManager
 typealias PermissionListener = (isGranted: Boolean) -> Unit
 
 class PermissionsFragment : Fragment() {
+
+    private lateinit var resultLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var listener: PermissionListener
+
+    override fun onAttach(context: Context) {
+
+        resultLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { map ->
+                map.forEach {
+                    if (it.value == false) {
+                        listener(false)
+                        return@registerForActivityResult
+                    }
+                }
+                listener(true)
+            }
+        super.onAttach(context)
+    }
 
 
     fun requestPermissions(permissions: Array<String>, listener: PermissionListener) {
@@ -32,17 +52,7 @@ class PermissionsFragment : Fragment() {
         permissions: Array<String>,
         listener: PermissionListener
     ) {
-        val resultLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { map ->
-                map.forEach {
-                    if (it.value == false) {
-                        listener(false)
-                        return@registerForActivityResult
-                    }
-                }
-                listener(true)
-            }
-
+        this.listener = listener
         resultLauncher.launch(
             permissions
         )
