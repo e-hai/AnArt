@@ -24,9 +24,9 @@ class DemoOpencvActivity : AppCompatActivity() {
             val loadSuccess: Boolean = OpenCVLoader.initDebug()
 
             if (loadSuccess) {
-                Log.e("-- ", "Opencv load Success")
+                Log.e("DemoOpencvActivity", "Opencv load Success")
             } else {
-                Log.e("-- ", "Opencv load Fail")
+                Log.e("DemoOpencvActivity", "Opencv load Fail")
             }
         }
 

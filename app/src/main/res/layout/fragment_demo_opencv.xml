@@ -6,22 +6,36 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageView
+    <com.an.art.demo_opencv.FaceView
         android:id="@+id/a_face_view"
         android:layout_width="200dp"
         android:layout_height="200dp"
-        android:background="@android:color/holo_blue_bright"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
 
-    <ImageView
+    <com.an.art.demo_opencv.FaceView
         android:id="@+id/b_face_view"
         android:layout_width="200dp"
         android:layout_height="200dp"
+        android:layout_marginTop="16dp"
         android:background="@android:color/holo_orange_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <ImageView
+        android:id="@+id/result_face_view"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="64dp"
+        android:background="@android:color/holo_blue_bright"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/a_face_view" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
