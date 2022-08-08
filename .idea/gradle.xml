@@ -12,9 +12,12 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/ffmpeg" />
-            <option value="$PROJECT_DIR$/gl" />
-            <option value="$PROJECT_DIR$/opencv" />
+            <option value="$PROJECT_DIR$/core_ffmpeg" />
+            <option value="$PROJECT_DIR$/core_opencv" />
+            <option value="$PROJECT_DIR$/core_opengl" />
+            <option value="$PROJECT_DIR$/extensions_ffmpeg" />
+            <option value="$PROJECT_DIR$/extensions_opencv" />
+            <option value="$PROJECT_DIR$/extensions_opengl" />
           </set>
         </option>
       </GradleProjectSettings>

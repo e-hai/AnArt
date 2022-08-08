@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/layout_surface_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/layout"
+        android:gravity="center">
+
+        <com.google.android.exoplayer2.ui.StyledPlayerView
+            android:id="@+id/video_loader"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            app:resize_mode="fit"
+            app:surface_type="texture_view"
+            app:use_controller="false" />
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/icon_video_play"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/layout"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:padding="12dp"
+        android:src="@drawable/ffmpeg_pause" />
+
+    <RelativeLayout
+        android:id="@+id/layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+
+        <RelativeLayout
+            android:id="@+id/video_shoot_tip"
+            android:layout_width="match_parent"
+            android:layout_height="48dp">
+
+            <TextView
+                android:id="@+id/select_time_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="20dp"
+                android:text="00:00/00:15"
+                android:textColor="#CECECE"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/sound_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="20dp"
+                android:src="@drawable/ffmpeg_icon_sound_on" />
+        </RelativeLayout>
+
+        <FrameLayout
+            android:id="@+id/video_frames_layout"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_below="@+id/video_shoot_tip">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/video_frames_recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp" />
+
+            <LinearLayout
+                android:id="@+id/seekBarLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="bottom"
+                android:gravity="bottom"
+                android:orientation="vertical" />
+        </FrameLayout>
+    </RelativeLayout>
+</RelativeLayout>

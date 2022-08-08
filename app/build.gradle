@@ -72,9 +72,9 @@ dependencies {
     
     implementation("com.github.e-hai:AnFile:1.1.0")
     implementation("io.coil-kt:coil:2.1.0")
-
-    implementation project(":gl")
-    implementation project(":ffmpeg")
-    implementation project(":opencv")
+    implementation project(':extensions_ffmpeg')
+    implementation project(':core_opengl')
+    implementation project(':core_ffmpeg')
+    implementation project(':core_opencv')
 }
 

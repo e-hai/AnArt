@@ -4,18 +4,13 @@ import android.app.Application
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toFile
 import androidx.fragment.app.FragmentActivity
-import com.an.art.App
 import com.an.art.databinding.ActivityFfmpegBinding
-import com.an.ffmpeg.code.VideoCrop
-import com.an.file.FileManager
+import com.art.ffmpeg.code.VideoCrop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import java.io.File
 
 class FFmpegActivity : AppCompatActivity() {
 

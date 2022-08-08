@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <color name="main_color">#C53CE2</color>
-    <color name="shoot_max_range">#303033</color>
-    <color name="shadow_color">#80111212</color>
-</resources>

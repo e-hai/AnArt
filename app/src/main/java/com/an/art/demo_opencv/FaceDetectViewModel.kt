@@ -256,7 +256,6 @@ class FaceDetectViewModel(app: Application) : AndroidViewModel(app) {
         val triangleList = MatOfFloat6()
         points.forEach {
             val item = Point(it.x.toDouble(), it.y.toDouble())
-            Log.d(TAG, "item=$item")
             subdiv2D.insert(item)
         }
         subdiv2D.getTriangleList(triangleList)
@@ -302,16 +301,30 @@ class FaceDetectViewModel(app: Application) : AndroidViewModel(app) {
                 Point((triangle[4] - rect.x).toDouble(), (triangle[5] - rect.y).toDouble())
             )
         }
-        fillConvexPoly(mask, trianglePointInMask, Scalar(255.0, 182.0, 193.0))
-//        mask.setTo(Scalar(255.0, 182.0, 193.0))
-        val bitmap = Bitmap.createBitmap(rect.height, rect.width, Bitmap.Config.RGB_565)
-        matToBitmap(mask, bitmap)
+        fillConvexPoly(mask, trianglePointInMask, Scalar(255.0, 255.0, 255.0), LINE_AA)
+
+        val selectROI = Mat(img, rect)
+
+        val bitmap = Bitmap.createBitmap(
+            selectROI.width(),
+            selectROI.height(),
+            Bitmap.Config.RGB_565
+        )
+        matToBitmap(selectROI, bitmap)
 
         viewModelScope.launch {
             transformResult.emit(FaceTransformResult(bitmap))
         }
     }
 
+    private fun applyAffineTransform(
+        srcImg: Mat,
+        dstImg: Mat,
+        srcRect: MatOfPoint2f,
+        dstRect: MatOfPoint2f
+    ) {
+        getAffineTransform(srcRect, dstRect)
+    }
 
     companion object {
         const val TAG = "FaceDetectViewModel"
