@@ -1,11 +1,11 @@
 package com.an.art
 
-import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.an.art.databinding.ActivityMainBinding
-import com.an.art.demo_opencv.DemoOpencvActivity
+import com.an.art.opencv.OpencvActivity
+import com.an.art.ffmpeg.FFmpegActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,9 +27,23 @@ class MainActivity : AppCompatActivity() {
         binding.opencvBtn.setOnClickListener {
             gotoOpencv()
         }
+        binding.openglBtn.setOnClickListener {
+            gotoOpengl()
+        }
+        binding.ffmpegBtn.setOnClickListener {
+            gotoFFmpeg()
+        }
+    }
+
+    private fun gotoFFmpeg() {
+        startActivity(Intent(this, FFmpegActivity::class.java))
+    }
+
+    private fun gotoOpengl() {
+        startActivity(Intent(this, OpencvActivity::class.java))
     }
 
     private fun gotoOpencv() {
-        startActivity(Intent(this, DemoOpencvActivity::class.java))
+        startActivity(Intent(this, OpencvActivity::class.java))
     }
 }
