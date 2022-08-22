@@ -11,7 +11,9 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/app_ffmpeg" />
+            <option value="$PROJECT_DIR$/app_opencv" />
+            <option value="$PROJECT_DIR$/app_opengl" />
             <option value="$PROJECT_DIR$/core_ffmpeg" />
             <option value="$PROJECT_DIR$/core_opencv" />
             <option value="$PROJECT_DIR$/core_opengl" />

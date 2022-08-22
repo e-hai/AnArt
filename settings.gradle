@@ -8,10 +8,12 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "AnArt"
-include ':app'
+include ':app_opencv'
 include ':core_opengl'
 include ':core_ffmpeg'
 include ':core_opencv'
 include ':extensions_ffmpeg'
 include ':extensions_opencv'
 include ':extensions_opengl'
+include ':app_opengl'
+include ':app_ffmpeg'
