@@ -16,6 +16,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.opencv.android.Utils.matToBitmap
 import org.opencv.core.*
 import org.opencv.core.CvType.CV_8UC3
@@ -23,6 +25,13 @@ import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc.*
 import org.opencv.imgproc.Subdiv2D
 import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.security.KeyStore
+import java.security.cert.Certificate
+import java.security.cert.CertificateFactory
+import java.util.*
+import javax.net.ssl.*
 
 class OpencvViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -52,6 +61,8 @@ class OpencvViewModel(app: Application) : AndroidViewModel(app) {
             .build()
 
         detector = FaceDetection.getClient(highAccuracyOpts)
+
+
     }
 
     fun detectorByML(srcPhoto: Uri) {
@@ -246,6 +257,7 @@ class OpencvViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun generateDelaunay(photoFile: File, points: List<PointF>): MatOfFloat6 {
         val mat = Imgcodecs.imread(photoFile.absolutePath)
+
         val size = mat.size()
         val subdiv2D = Subdiv2D().apply {
             initDelaunay(Rect(0, 0, size.width.toInt(), size.height.toInt()))
@@ -326,6 +338,8 @@ class OpencvViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         const val TAG = "FaceDetectViewModel"
     }
+
+
 }
 
 

@@ -14,7 +14,7 @@ import android.view.ViewGroup
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import com.an.app.opengl.databinding.FragmentCameraBinding
+import com.an.app.opengl.databinding.FragmentOpenglCameraBinding
 import com.an.gl.usercase.camera.CameraView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.*
@@ -23,7 +23,7 @@ import java.util.concurrent.Executor
 
 class OpenglCameraFragment : Fragment() {
 
-    private lateinit var binding: FragmentCameraBinding
+    private lateinit var binding: FragmentOpenglCameraBinding
     private lateinit var cameraExecutor: Executor
     private lateinit var imageCapture: ImageCapture
     private lateinit var detector: FaceDetector
@@ -32,7 +32,7 @@ class OpenglCameraFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentCameraBinding.inflate(layoutInflater)
+        binding = FragmentOpenglCameraBinding.inflate(layoutInflater)
         return binding.root
     }
 

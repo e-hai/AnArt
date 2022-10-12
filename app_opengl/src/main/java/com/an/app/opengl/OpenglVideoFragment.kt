@@ -7,23 +7,23 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toFile
-import com.an.app.opengl.databinding.FragmentVideoBinding
+import com.an.app.opengl.databinding.FragmentOpenglVideoBinding
 import com.an.file.FileManager
 import com.an.gl.usercase.WatermarkConfig
 import com.an.gl.util.FileUtil
-import com.an.gl.usercase.video.VideoAddWatermarkManager
+import com.an.gl.plus.usercase.video.VideoAddWatermarkManager
 import java.io.File
 import java.lang.Exception
 
 class OpenglVideoFragment : Fragment() {
 
-    private lateinit var binding: FragmentVideoBinding
+    private lateinit var binding: FragmentOpenglVideoBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentVideoBinding.inflate(layoutInflater)
+        binding = FragmentOpenglVideoBinding.inflate(layoutInflater)
         return binding.root
     }
 

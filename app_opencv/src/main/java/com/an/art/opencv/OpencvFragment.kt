@@ -14,7 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import coil.load
-import com.an.art.databinding.FragmentDemoOpencvBinding
+import com.an.art.databinding.FragmentOpencvBinding
 import kotlinx.coroutines.flow.collectLatest
 
 
@@ -28,7 +28,7 @@ class OpencvFragment : Fragment() {
     }
 
 
-    private lateinit var binding: FragmentDemoOpencvBinding
+    private lateinit var binding: FragmentOpencvBinding
     private val faceDetectViewModel: OpencvViewModel by viewModels()
     private lateinit var albumRouter: ActivityResultLauncher<Int>
     private var selectFrom = 0
@@ -52,7 +52,7 @@ class OpencvFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentDemoOpencvBinding.inflate(inflater)
+        binding = FragmentOpencvBinding.inflate(inflater)
         return binding.root
     }
 
