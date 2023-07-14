@@ -11,6 +11,7 @@ import android.animation.ValueAnimator
 import android.view.animation.LinearInterpolator
 import android.animation.AnimatorListenerAdapter
 import android.graphics.*
+import android.util.AttributeSet
 import android.view.View
 import com.art.ffmpeg.extensions.R
 
@@ -21,7 +22,11 @@ import com.art.ffmpeg.extensions.R
  * 3、绘制元素均按照已选区域来调整即可
  * 4、仅需知道最大区域左侧关联的视频的帧，加上maxTime即可计算已选区域两侧对应的帧，播放进度条对应的帧
  */
-class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long) : View(context) {
+class RangeSeekBarView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
 
     private var activePointerId = INVALID_POINTER_ID
     private var normalizedMinValueTime = 0.0
@@ -32,9 +37,9 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      */
     private var maxRangePaint: Paint//画笔-绘制最大截取区域边框
     private var maxRangeRect = RectF() //最大可截取区域
-    private val maxRangeMarginStartEnd = Utils.dpToPx(context, 38) //左右与view边界的距离
-    private val maxRangeMarginTopBottom = Utils.dpToPx(context, 4) //上下与view边界的距离
-    private val maxRangeRound = Utils.dpToPx(context, 4).toFloat()
+    private val maxRangeMarginStartEnd = 38.dpToPx(context) //左右与view边界的距离
+    private val maxRangeMarginTopBottom = 4.dpToPx(context) //上下与view边界的距离
+    private val maxRangeRound = 4.dpToPx(context).toFloat()
     private var minRangeWidth = 1f //最小裁剪距离
 
     /**
@@ -42,7 +47,7 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      */
     private var selectRangePaint: Paint//画笔-绘制已选中的截取区域边框
     private var selectRangeRect = RectF() //已选中的截取区域
-    private val borderSize = Utils.dpToPx(context,4)
+    private val borderSize = 4.dpToPx(context)
 
     /**
      * 指示器
@@ -51,16 +56,16 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
     private var thumbPaint: Paint//画笔-绘制指示器
     private var thumbLeftBitmap: Bitmap//左侧指示器位图
     private var thumbRightBitmap: Bitmap//右侧指示器位图
-    private val thumbWidth = Utils.dpToPx(context,18) //指示器宽
-    private val thumbHeight = Utils.dpToPx(context,72) //指示器高
+    private val thumbWidth = 18.dpToPx(context) //指示器宽
+    private val thumbHeight = 72.dpToPx(context) //指示器高
 
     /**
      * 播放进度条-范围在已选区域
      */
     private var progress = 0f //进度 范围0-1
     private var progressPaint: Paint
-    private val progressWidth = Utils.dpToPx(context,2)
-    private val progressHeight = Utils.dpToPx(context,68)
+    private val progressWidth = 2.dpToPx(context)
+    private val progressHeight = 68.dpToPx(context)
     private var progressAnimator: ValueAnimator? = null
 
     /**
@@ -75,7 +80,7 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
     private var selectRangeRightNormalized = 1.0 //点坐标占总长度的比例值，范围从0-1
     private val selectRangeLeftTimePaint = Paint() //画笔-左侧裁剪的视频时间
     private val selectRangeRightTimePaint = Paint() //画笔-右侧裁剪的视频时间
-    private val timeTextSize = Utils.spToPx(context,0)
+    private val timeTextSize = 0.spToPx(context)
     private var startTime: Long = 0 //最大可截取区域左侧对应的视频帧
     private var minRangeTime: Long = 0 //最小可截取时间
     private var maxRangeTime: Long = 0 //最大可截取时间
@@ -90,8 +95,6 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
     init {
         isFocusable = true
         isFocusableInTouchMode = true
-        setMinRangeTime(minRangeTime)
-        setMaxRangeTime(maxRangeTime)
         val selectRangeColorRes = context.resources.getColor(R.color.ffmpeg_main_color)
         val timeColorRes = context.resources.getColor(R.color.ffmpeg_main_color)
         val shootMaxRangeColorRes = context.resources.getColor(R.color.ffmpeg_shoot_max_range)
@@ -199,7 +202,7 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
     }
 
     private fun drawProgress(canvas: Canvas) {
-        if (progress <= 0) return
+        if (progress <= 0 || mIsDragging) return
         val left = selectRangeLeftX + progress * selectRangeRect.width()
         val top = selectRangeRect.top
         canvas.drawRoundRect(
@@ -273,10 +276,10 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      * 绘制左右裁剪时间
      */
     private fun drawCutTimeText(canvas: Canvas) {
-        val leftThumbsTime = Utils.convertSecondsToTime(
+        val leftThumbsTime = convertSecondsToTime(
             selectedLeftTimeInVideo.toLong()
         )
-        val rightThumbsTime = Utils.convertSecondsToTime(
+        val rightThumbsTime = convertSecondsToTime(
             selectedLeftTimeInVideo.toLong()
         )
         canvas.drawText(
@@ -482,8 +485,9 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      *
      * @param minRangeTime 秒
      */
-    private fun setMinRangeTime(minRangeTime: Long) {
+    fun setMinRangeTime(minRangeTime: Long) {
         this.minRangeTime = minRangeTime
+        postInvalidate()
     }
 
     /**
@@ -491,8 +495,9 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      *
      * @param maxRangeTime 秒
      */
-    private fun setMaxRangeTime(maxRangeTime: Long) {
+    fun setMaxRangeTime(maxRangeTime: Long) {
         this.maxRangeTime = maxRangeTime
+        postInvalidate()
     }
 
     /**
@@ -529,7 +534,7 @@ class RangeSeekBarView(context: Context, minRangeTime: Long, maxRangeTime: Long)
      * 指视频时间
      * 已选多少秒时间
      */
-    val selectTime: Long
+    private val selectTime: Long
         get() = (selectedRightTimeInVideo - selectedLeftTimeInVideo).toLong()
 
     override fun onSaveInstanceState(): Parcelable? {

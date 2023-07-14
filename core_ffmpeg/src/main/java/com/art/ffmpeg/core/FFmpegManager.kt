@@ -5,9 +5,7 @@ import android.net.Uri
 import android.util.Log
 import com.arthenica.ffmpegkit.FFmpegKit
 import com.arthenica.ffmpegkit.FFmpegKitConfig
-import com.arthenica.ffmpegkit.FFmpegSessionCompleteCallback
 import com.arthenica.ffmpegkit.ReturnCode
-import java.util.*
 
 
 object FFmpegManager {
@@ -18,6 +16,9 @@ object FFmpegManager {
         printVersion()
     }
 
+    /**
+     * 打印FFmpeg的版本
+     * **/
     private fun printVersion() {
         val session = FFmpegKit.execute("-version")
         if (ReturnCode.isSuccess(session.returnCode)) {
@@ -58,8 +59,8 @@ object FFmpegManager {
                 " -ss $start" +
                 " -t $duration" +
                 " -vf scale=w=$maxWidth:h=$maxHeight:force_original_aspect_ratio=decrease" +
-                "  -r $frameRate $outputVideoPath"
-        Log.d(TAG,cmd)
+                " -r $frameRate $outputVideoPath"
+        Log.d(TAG, cmd)
         executeCommand(cmd, callback)
     }
 
@@ -90,6 +91,7 @@ object FFmpegManager {
             {
                 // CALLED WHEN SESSION GENERATES STATISTICS
                 Log.d(TAG, "${it.sessionId} ${it.size}")
+                callback.onComplete(State.Load(it.time))
             })
     }
 }

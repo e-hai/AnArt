@@ -29,6 +29,9 @@ import com.google.android.exoplayer2.MediaItem
 import com.art.ffmpeg.extensions.R
 import java.util.concurrent.TimeUnit
 
+/**
+ * 视频裁剪（预览，开始时间，结束时间）
+ * **/
 class VideoCropView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet?,
@@ -40,14 +43,14 @@ class VideoCropView @JvmOverloads constructor(
     private var videoView: StyledPlayerView
     private var playingView: ImageView
     private var soundView: ImageView
-    private var videoThumbRecyclerView: RecyclerView
-    private var seekBarLayout: LinearLayout
     private var selectTimeView: TextView
+    private var videoThumbRecyclerView: RecyclerView
     private var videoThumbAdapter: VideoCropAdapter
+    private var seekBarLayout: LinearLayout
     private var rangeSeekBarView: RangeSeekBarView? = null
     private var thumbsTotalCount = 0
     private var videoDurationSec = 0L
-    private val recyclerViewPadding = Utils.dpToPx(context, 36)
+    private val recyclerViewPadding = 36.dpToPx(context)
     private var videoCropViewListener: VideoCropViewListener? = null
 
 
@@ -145,7 +148,9 @@ class VideoCropView @JvmOverloads constructor(
             )
         )
         rangeSeekBarView =
-            RangeSeekBarView(context, MIN_SHOOT_DURATION_SECONDS, maxShootDuration).apply {
+            RangeSeekBarView(context).apply {
+                setMinRangeTime(MIN_SHOOT_DURATION_SECONDS)
+                setMaxRangeTime(maxShootDuration)
                 setOnRangeSeekBarChangeListener(buildRangeSeekBarChangeListener())
             }
 
@@ -162,8 +167,10 @@ class VideoCropView @JvmOverloads constructor(
                 pressedThumb: Thumb?
             ) {
                 when (action) {
-                    MotionEvent.ACTION_MOVE -> {
+                    MotionEvent.ACTION_DOWN -> {
                         videoStop()
+                    }
+                    MotionEvent.ACTION_MOVE -> {
                         val position: Long = if (pressedThumb == Thumb.MIN) {
                             leftSelectTime
                         } else {
@@ -264,9 +271,9 @@ class VideoCropView @JvmOverloads constructor(
 
     @SuppressLint("SetTextI18n")
     private fun updateSelectTime(leftSelectTime: Long, rightSelectTime: Long) {
-        selectTimeView.text = (Utils.convertSecondsToTime(leftSelectTime)
+        selectTimeView.text = (convertSecondsToTime(leftSelectTime)
                 + "/"
-                + Utils.convertSecondsToTime(rightSelectTime))
+                + convertSecondsToTime(rightSelectTime))
     }
 
     /**

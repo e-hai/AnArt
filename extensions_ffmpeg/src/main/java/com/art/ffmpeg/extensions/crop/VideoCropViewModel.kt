@@ -7,11 +7,21 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.an.file.FileManager
 import com.art.ffmpeg.core.FFmpegManager
+import com.art.ffmpeg.core.State
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+
+
+sealed class VideoCropStatus {
+    object Idle : VideoCropStatus()
+    data class Success(val videoUri: Uri) : VideoCropStatus()
+    data class Fail(val msg: String) : VideoCropStatus()
+    data class Loading(val progress: Double) : VideoCropStatus()
+}
 
 class VideoCropViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -47,7 +57,17 @@ class VideoCropViewModel(app: Application) : AndroidViewModel(app) {
                 startSec,
                 duration
             ) {
-
+                viewModelScope.launch {
+                    when (it) {
+                        is State.Success -> cropStatus.emit(VideoCropStatus.Success(outputVideoUri))
+                        is State.Cancel -> cropStatus.emit(VideoCropStatus.Fail("User cancel"))
+                        is State.Fail -> cropStatus.emit(VideoCropStatus.Fail("ffmpeg run fail"))
+                        is State.Load -> {
+                            val progress = it.time.toDouble() / duration.toDouble()
+                            cropStatus.emit(VideoCropStatus.Loading(progress))
+                        }
+                    }
+                }
             }
         }
     }
