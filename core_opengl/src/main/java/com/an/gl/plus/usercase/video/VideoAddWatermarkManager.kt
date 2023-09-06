@@ -8,10 +8,10 @@ import com.an.gl.plus.base.*
 import com.an.gl.plus.base.egl.EglCore
 import com.an.gl.plus.base.egl.EglCore.Companion.FLAG_TRY_GLES3
 import com.an.gl.plus.base.egl.EglSurfaceBase
-import com.an.gl.usercase.MaskConfig
-import com.an.gl.usercase.MaskDraw
-import com.an.gl.usercase.WatermarkConfig
-import com.an.gl.usercase.WatermarkDraw
+import com.an.gl.plus.usercase.MaskConfig
+import com.an.gl.plus.usercase.MaskDraw
+import com.an.gl.plus.usercase.WatermarkConfig
+import com.an.gl.plus.usercase.WatermarkDraw
 import java.io.File
 import java.util.concurrent.TimeUnit
 

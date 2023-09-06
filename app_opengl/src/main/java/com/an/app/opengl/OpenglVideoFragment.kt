@@ -9,8 +9,8 @@ import android.view.ViewGroup
 import androidx.core.net.toFile
 import com.an.app.opengl.databinding.FragmentOpenglVideoBinding
 import com.an.file.FileManager
-import com.an.gl.usercase.WatermarkConfig
-import com.an.gl.util.FileUtil
+import com.an.gl.plus.usercase.WatermarkConfig
+import com.an.gl.plus.util.FileUtil
 import com.an.gl.plus.usercase.video.VideoAddWatermarkManager
 import java.io.File
 import java.lang.Exception

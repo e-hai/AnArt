@@ -1,4 +1,4 @@
-package com.an.gl.usercase
+package com.an.gl.plus.usercase
 
 import android.content.Context
 import android.opengl.GLES31
@@ -6,7 +6,7 @@ import android.opengl.GLUtils
 import androidx.annotation.DrawableRes
 import com.an.gl.plus.base.draw.*
 import com.an.gl.plus.base.texture.Texture2dOes
-import com.an.gl.util.FileUtil
+import com.an.gl.plus.util.FileUtil
 
 class MaskDraw(
     context: Context,

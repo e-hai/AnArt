@@ -1,4 +1,4 @@
-package com.an.gl.usercase.camera
+package com.an.gl.plus.usercase.camera
 
 import android.content.Context
 import android.opengl.GLSurfaceView
@@ -9,7 +9,7 @@ import android.view.Gravity
 import android.widget.FrameLayout
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
-import com.an.gl.usercase.camera.CameraRender.Companion.TAG
+import com.an.gl.plus.usercase.camera.CameraRender.Companion.TAG
 
 /**
  * 在CameraX上扩展Opengl的使用

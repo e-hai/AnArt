@@ -1,4 +1,4 @@
-package com.an.gl.usercase
+package com.an.gl.plus.usercase
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -9,7 +9,7 @@ import androidx.annotation.DrawableRes
 import com.an.gl.plus.base.draw.GL_COORDINATE_SYSTEM_XY
 import com.an.gl.plus.base.draw.SimpleDraw
 import com.an.gl.plus.base.texture.Texture2dOes
-import com.an.gl.usercase.WatermarkDraw.Companion.TAG
+import com.an.gl.plus.usercase.WatermarkDraw.Companion.TAG
 
 class WatermarkDraw(
     context: Context,

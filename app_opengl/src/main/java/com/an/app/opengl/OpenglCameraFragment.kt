@@ -6,7 +6,6 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -15,7 +14,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.an.app.opengl.databinding.FragmentOpenglCameraBinding
-import com.an.gl.usercase.camera.CameraView
+import com.an.gl.plus.usercase.camera.CameraView
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.*
 import java.io.File

@@ -1,4 +1,4 @@
-package com.an.gl.util
+package com.an.gl.plus.util
 
 import android.content.Context
 import android.opengl.GLES31

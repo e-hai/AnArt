@@ -1,7 +1,7 @@
-package com.an.gl.usercase.demo
+package com.an.gl.plus.usercase.demo
 
 import android.opengl.GLES31
-import com.an.gl.util.GlUtil
+import com.an.gl.plus.util.GlUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer

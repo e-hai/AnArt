@@ -15,7 +15,7 @@
  */
 package com.an.gl.plus.base.egl
 
-import com.an.gl.util.GlUtil.checkGlError
+import com.an.gl.plus.util.GlUtil.checkGlError
 import android.opengl.EGL14
 import kotlin.Throws
 import android.opengl.GLES20

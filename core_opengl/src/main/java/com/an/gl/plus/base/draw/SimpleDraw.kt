@@ -2,7 +2,7 @@ package com.an.gl.plus.base.draw
 
 import android.opengl.GLES31
 import com.an.gl.plus.base.texture.Texture
-import com.an.gl.util.GlUtil
+import com.an.gl.plus.util.GlUtil
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 

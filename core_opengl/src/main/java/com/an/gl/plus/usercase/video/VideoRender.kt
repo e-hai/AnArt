@@ -5,8 +5,8 @@ import android.opengl.GLES31
 import android.opengl.GLSurfaceView
 import android.view.Surface
 import com.an.gl.plus.base.*
-import com.an.gl.usercase.WatermarkDraw
-import com.an.gl.util.FileUtil
+import com.an.gl.plus.usercase.WatermarkDraw
+import com.an.gl.plus.util.FileUtil
 import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10

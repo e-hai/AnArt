@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.an.gl.usercase.camera.CameraView
+    <com.an.gl.plus.usercase.camera.CameraView
         android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

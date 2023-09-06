@@ -1,4 +1,4 @@
-package com.an.gl.usercase.camera
+package com.an.gl.plus.usercase.camera
 
 import android.content.Context
 import android.opengl.GLES31
@@ -9,7 +9,7 @@ import androidx.annotation.UiThread
 import androidx.camera.core.SurfaceRequest
 import androidx.core.content.ContextCompat
 import com.an.gl.plus.base.MediaEglManager
-import com.an.gl.usercase.WatermarkDraw
+import com.an.gl.plus.usercase.WatermarkDraw
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
